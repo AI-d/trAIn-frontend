@@ -9,9 +9,9 @@ class AudioProcessor extends AudioWorkletProcessor {
                 sum += channelData[i] * channelData[i];
             }
             const rms = Math.sqrt(sum / channelData.length);
-
-            // 일정 RMS 이상이면 main thread로 메시지 전송
-            this.port.postMessage({ rms });
+            if(rms > 0.001) {
+                this.port.postMessage(channelData, [channelData.buffer]);
+            }
         }
         return true; // 계속 처리
     }
