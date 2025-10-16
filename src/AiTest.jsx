@@ -32,7 +32,7 @@ const AiTest = () => {
                 // AudioContext & AudioWorklet 설정
                 const audioContext = new AudioContext();
                 const source = audioContext.createMediaStreamSource(localStream);
-                await audioContext.audioWorklet.addModule('audio-processor.js');
+                await audioContext.audioWorklet.addModule('/audio-processor.js');
 
                 const workletNode = new AudioWorkletNode(audioContext, 'audio-processor');
                 workletNode.port.onmessage = (event) => {
