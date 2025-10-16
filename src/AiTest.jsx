@@ -10,8 +10,8 @@ const AiTest = () => {
 
     const initConnection = async () => {
         // WebSocket 연결
-        wsRef.current = new WebSocket("ws://localhost:9090/ws/signaling/postman-test-session-123");
-        audioWs.current = new WebSocket("ws://localhost:9090/ws/audio/postman-test-session-123");
+        wsRef.current = new WebSocket("ws://localhost:9090/ws/signaling/{sessionId}");
+        audioWs.current = new WebSocket("ws://localhost:9090/ws/audio/{sessionId}");
         audioWs.current.binaryType = "arraybuffer";
 
         wsRef.current.onopen = async () => {
