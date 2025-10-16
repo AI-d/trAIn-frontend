@@ -20,8 +20,7 @@ const AiTest = () => {
 
             // 내 오디오/비디오 가져오기
             const localStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: false,
+                audio: true,
             });
             localStream.getTracks().forEach((track) =>
                 pcRef.current.addTrack(track, localStream)
