@@ -20,15 +20,19 @@ const AiTest = () => {
 
             // 내 오디오/비디오 가져오기
             const localStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: false,
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
             });
-            localStream.getTracks().forEach((track) =>
+
+            localStream.getAudioTracks().forEach((track) =>
                 pcRef.current.addTrack(track, localStream)
             );
             localVideoRef.current.srcObject = localStream;
 
-            // 4ICE Candidate 서버로 전송
+            // ICE Candidate 서버로 전송
             pcRef.current.onicecandidate = (event) => {
                 if (event.candidate) {
                     wsRef.current.send(
@@ -37,7 +41,7 @@ const AiTest = () => {
                 }
             };
 
-            // 5상대 스트림 표시
+            // 상대 스트림 표시
             pcRef.current.ontrack = (event) => {
                 remoteVideoRef.current.srcObject = event.streams[0];
             };
@@ -76,6 +80,7 @@ const AiTest = () => {
         <div style={{ display: "flex", gap: "10px" }}>
             <video ref={localVideoRef} autoPlay muted playsInline width="300" />
             <video ref={remoteVideoRef} autoPlay playsInline width="300" />
+            <audio ></audio>
         </div>
     );
 };
