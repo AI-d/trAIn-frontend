@@ -5,11 +5,16 @@ const AiTest = () => {
     const remoteVideoRef = useRef(null);
     const pcRef = useRef(null);
     const wsRef = useRef(null);
+    const audioWs = useRef(null);
 
     useEffect(() => {
         const init = async () => {
             // WebSocket 연결
-            wsRef.current = new WebSocket("ws://localhost:9090/ws/signaling/123");
+            wsRef.current = new WebSocket("ws://localhost:9090/ws/signaling/postman-test-session-123");
+
+            audioWs.current = new WebSocket("ws://localhost:9090/ws/audio/postman-test-session-123");
+            audioWs.current.binaryType = "arraybuffer";
+
 
             wsRef.current.onopen = async () => {
                 console.log("WebSocket 연결됨");
@@ -36,8 +41,14 @@ const AiTest = () => {
 
                 const workletNode = new AudioWorkletNode(audioContext, 'audio-processor');
                 workletNode.port.onmessage = (event) => {
-                    const { rms } = event.data;
-                    wsRef.current.send(JSON.stringify({ type: 'AUDIO_DATA', rms }));
+                    const float32Array = new Float32Array(event.data);
+                    const data = new Int16Array(float32Array.length);
+                    for(let i = 0; i < float32Array.length; i++) {
+                        data[i] = Math.max(-1, Math.min(1, float32Array[i])) * 32767;
+                    }
+
+                    console.log('type: ', data.constructor.name);
+                    audioWs.current.send(data.buffer);
                 };
                 source.connect(workletNode);
                 // workletNode.connect(audioContext.destination); // 소리 출력 필요 시 연결
