@@ -1,130 +1,83 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Input, Button, Card, Tag, Divider } from 'antd';
+import React, {useEffect, useRef} from 'react';
 
-const { TextArea } = Input;
-
-const SignalingTest = () => {
-    const [message, setMessage] = useState('');
-    const [conversation, setConversation] = useState([]);
-    const [isConnected, setIsConnected] = useState(false);
+const AiTest = () => {
+    const localVideoRef = useRef(null);
+    const remoteVideoRef = useRef(null);
+    const pcRef = useRef(null);
     const wsRef = useRef(null);
-    const sessionId = 'test-123'; // 테스트용 세션 ID
 
     useEffect(() => {
-        // Signaling WebSocket 연결
-        const ws = new WebSocket(`ws://localhost:9090/ws/signaling/${sessionId}`);
+        // WebSocket 연결
+        wsRef.current = new WebSocket("ws://localhost:9090/ws/signaling/123");
 
-        ws.onopen = () => {
-            console.log('WebSocket 연결됨');
-            setIsConnected(true);
+        wsRef.current.onopen = async () => {
+            console.log("WebSocket 연결됨");
+
+            // RTCPeerConnection 생성
+            pcRef.current = new RTCPeerConnection({
+                iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+            });
+
+            // 내 오디오/비디오 가져오기
+            const localStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false,
+            });
+            localStream.getTracks().forEach((track) =>
+                pcRef.current.addTrack(track, localStream)
+            );
+            localVideoRef.current.srcObject = localStream;
+
+            // 4ICE Candidate 서버로 전송
+            pcRef.current.onicecandidate = (event) => {
+                if (event.candidate) {
+                    wsRef.current.send(
+                        JSON.stringify({ type: "ICE_CANDIDATE", candidate: event.candidate })
+                    );
+                }
+            };
+
+            // 5상대 스트림 표시
+            pcRef.current.ontrack = (event) => {
+                remoteVideoRef.current.srcObject = event.streams[0];
+            };
+
+            // ️Offer 생성 및 전송
+            const offer = await pcRef.current.createOffer();
+            await pcRef.current.setLocalDescription(offer);
+            wsRef.current.send(JSON.stringify({ type: "OFFER", sdp: offer.sdp }));
+            console.log("Offer 전송 완료");
         };
 
-        ws.onmessage = (event) => {
+        // 서버 → 클라이언트 응답 처리
+        wsRef.current.onmessage = async (event) => {
+            console.log("raw 수신:", event.data);
             const data = JSON.parse(event.data);
-            console.log('메시지 수신:', data);
+            console.log("수신:", data);
 
-            if (data.type === 'connected') {
-                console.log('연결 성공:', data.sessionId);
-            } else if (data.type === 'OFFER') {
-                console.log('Offer 수신:', data.sdp);
-                // 테스트용: 자동 Answer 응답 가능
-            } else if (data.type === 'ANSWER') {
-                console.log('Answer 수신:', data.sdp);
-            } else if (data.type === 'ICE_CANDIDATE') {
-                console.log('ICE 후보 수신:', data.candidate);
-            } else if (data.type === 'error') {
-                console.error('에러:', data.message);
-                alert('에러: ' + data.message);
+            if (data.type === "ANSWER") {
+                await pcRef.current.setRemoteDescription({
+                    type: data.type.toLowerCase(),
+                    sdp: data.sdp,
+                });
+                console.log("Remote description 설정 완료");
+            } else if (data.type === "candidate") {
+                await pcRef.current.addIceCandidate(data.candidate);
             }
         };
-
-        ws.onerror = (error) => {
-            console.error('WebSocket 에러:', error);
-            setIsConnected(false);
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket 연결 종료');
-            setIsConnected(false);
-        };
-
-        wsRef.current = ws;
 
         return () => {
-            ws.close();
+            wsRef.current?.close();
+            pcRef.current?.close();
         };
-    }, [sessionId]);
-
-    const sendMessage = () => {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            if (!message.trim()) {
-                alert('메시지를 입력하세요');
-                return;
-            }
-
-            // 테스트용 텍스트 메시지 전송
-            wsRef.current.send(JSON.stringify({
-                type: 'ANSWER_MESSAGE',
-                content: message
-            }));
-
-            // 대화 기록에 추가
-            setConversation(prev => [...prev, { user: message }]);
-            setMessage('');
-        } else {
-            alert('WebSocket이 연결되지 않았습니다.');
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    };
+    }, []);
 
     return (
-        <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
-            <Card>
-                <div style={{ marginBottom: '20px' }}>
-                    <h1 style={{ margin: 0 }}>Signaling 테스트</h1>
-                    <Tag color={isConnected ? 'success' : 'error'} style={{ marginTop: '10px' }}>
-                        {isConnected ? '● 연결됨' : '● 연결 끊김'}
-                    </Tag>
-                </div>
-
-                <Divider />
-
-                <TextArea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="메시지를 입력하세요 (Shift+Enter: 줄바꿈, Enter: 전송)"
-                    autoSize={{ minRows: 3, maxRows: 6 }}
-                    style={{ marginBottom: '10px' }}
-                />
-                <Button type="primary" onClick={sendMessage} disabled={!isConnected} block>
-                    전송
-                </Button>
-
-                <Divider />
-
-                {conversation.length > 0 && (
-                    <>
-                        <h3>대화 기록</h3>
-                        {conversation.map((c, idx) => (
-                            <Card key={idx} style={{ marginBottom: '15px' }} size="small">
-                                <Tag color="blue">사용자</Tag>
-                                <div style={{ marginTop: '5px', whiteSpace: 'pre-wrap' }}>
-                                    {c.user}
-                                </div>
-                            </Card>
-                        ))}
-                    </>
-                )}
-            </Card>
+        <div style={{ display: "flex", gap: "10px" }}>
+            <video ref={localVideoRef} autoPlay muted playsInline width="300" />
+            <video ref={remoteVideoRef} autoPlay playsInline width="300" />
         </div>
     );
 };
 
-export default SignalingTest;
+export default AiTest;
