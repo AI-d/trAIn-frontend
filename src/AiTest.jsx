@@ -3,16 +3,16 @@ import { Input, Button, Card, Tag, Divider } from 'antd';
 
 const { TextArea } = Input;
 
-const AiJsonTest = () => {
+const SignalingTest = () => {
     const [message, setMessage] = useState('');
-    const [response, setResponse] = useState('');
-    const [isConnected, setIsConnected] = useState(false);
     const [conversation, setConversation] = useState([]);
+    const [isConnected, setIsConnected] = useState(false);
     const wsRef = useRef(null);
+    const sessionId = 'test-123'; // 테스트용 세션 ID
 
     useEffect(() => {
-        // WebSocket 연결
-        const ws = new WebSocket('ws://localhost:9090/ws/openai');
+        // Signaling WebSocket 연결
+        const ws = new WebSocket(`ws://localhost:9090/ws/signaling/${sessionId}`);
 
         ws.onopen = () => {
             console.log('WebSocket 연결됨');
@@ -25,16 +25,13 @@ const AiJsonTest = () => {
 
             if (data.type === 'connected') {
                 console.log('연결 성공:', data.sessionId);
-            } else if (data.type === 'stream') {
-                // 스트리밍 데이터를 기존 응답에 추가
-                setResponse(prev => prev + data.content);
-            } else if (data.type === 'done') {
-                console.log('스트리밍 완료');
-                // 대화 기록에 추가
-                setConversation(prev => [
-                    ...prev,
-                    { user: message, ai: response }
-                ]);
+            } else if (data.type === 'OFFER') {
+                console.log('Offer 수신:', data.sdp);
+                // 테스트용: 자동 Answer 응답 가능
+            } else if (data.type === 'ANSWER') {
+                console.log('Answer 수신:', data.sdp);
+            } else if (data.type === 'ICE_CANDIDATE') {
+                console.log('ICE 후보 수신:', data.candidate);
             } else if (data.type === 'error') {
                 console.error('에러:', data.message);
                 alert('에러: ' + data.message);
@@ -56,7 +53,7 @@ const AiJsonTest = () => {
         return () => {
             ws.close();
         };
-    }, []);
+    }, [sessionId]);
 
     const sendMessage = () => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -65,15 +62,15 @@ const AiJsonTest = () => {
                 return;
             }
 
-            // 응답 초기화
-            setResponse('');
-
-            // 메시지 전송
+            // 테스트용 텍스트 메시지 전송
             wsRef.current.send(JSON.stringify({
-                message: message
+                type: 'ANSWER_MESSAGE',
+                content: message
             }));
 
-            console.log('메시지 전송:', message);
+            // 대화 기록에 추가
+            setConversation(prev => [...prev, { user: message }]);
+            setMessage('');
         } else {
             alert('WebSocket이 연결되지 않았습니다.');
         }
@@ -87,10 +84,10 @@ const AiJsonTest = () => {
     };
 
     return (
-        <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
             <Card>
                 <div style={{ marginBottom: '20px' }}>
-                    <h1 style={{ margin: 0 }}>AI WebSocket 채팅 테스트</h1>
+                    <h1 style={{ margin: 0 }}>Signaling 테스트</h1>
                     <Tag color={isConnected ? 'success' : 'error'} style={{ marginTop: '10px' }}>
                         {isConnected ? '● 연결됨' : '● 연결 끊김'}
                     </Tag>
@@ -98,62 +95,28 @@ const AiJsonTest = () => {
 
                 <Divider />
 
-                {/* 입력 영역 */}
-                <div style={{ marginBottom: '20px' }}>
-                    <TextArea
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder="메시지를 입력하세요 (Shift+Enter: 줄바꿈, Enter: 전송)"
-                        autoSize={{ minRows: 3, maxRows: 6 }}
-                        style={{ marginBottom: '10px' }}
-                    />
-                    <Button
-                        type="primary"
-                        onClick={sendMessage}
-                        disabled={!isConnected}
-                        block
-                    >
-                        전송
-                    </Button>
-                </div>
+                <TextArea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="메시지를 입력하세요 (Shift+Enter: 줄바꿈, Enter: 전송)"
+                    autoSize={{ minRows: 3, maxRows: 6 }}
+                    style={{ marginBottom: '10px' }}
+                />
+                <Button type="primary" onClick={sendMessage} disabled={!isConnected} block>
+                    전송
+                </Button>
 
                 <Divider />
 
-                {/* 실시간 응답 영역 */}
-                {response && (
-                    <Card
-                        title="AI 응답 (실시간)"
-                        style={{ marginBottom: '20px', backgroundColor: '#f0f2f5' }}
-                    >
-                        <div style={{ whiteSpace: 'pre-wrap', minHeight: '100px' }}>
-                            {response}
-                        </div>
-                    </Card>
-                )}
-
-                {/* 대화 기록 */}
                 {conversation.length > 0 && (
                     <>
                         <h3>대화 기록</h3>
                         {conversation.map((c, idx) => (
-                            <Card
-                                key={idx}
-                                style={{ marginBottom: '15px' }}
-                                size="small"
-                            >
-                                <div style={{ marginBottom: '10px' }}>
-                                    <Tag color="blue">사용자</Tag>
-                                    <div style={{ marginTop: '5px', whiteSpace: 'pre-wrap' }}>
-                                        {c.user}
-                                    </div>
-                                </div>
-                                <Divider style={{ margin: '10px 0' }} />
-                                <div>
-                                    <Tag color="green">AI</Tag>
-                                    <div style={{ marginTop: '5px', whiteSpace: 'pre-wrap' }}>
-                                        {c.ai}
-                                    </div>
+                            <Card key={idx} style={{ marginBottom: '15px' }} size="small">
+                                <Tag color="blue">사용자</Tag>
+                                <div style={{ marginTop: '5px', whiteSpace: 'pre-wrap' }}>
+                                    {c.user}
                                 </div>
                             </Card>
                         ))}
@@ -164,4 +127,4 @@ const AiJsonTest = () => {
     );
 };
 
-export default AiJsonTest;
+export default SignalingTest;
