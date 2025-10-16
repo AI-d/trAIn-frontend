@@ -13,6 +13,7 @@ class AudioProcessor extends AudioWorkletProcessor {
                 this.port.postMessage(channelData, [channelData.buffer]);
             }
         }
+
         return true; // 계속 처리
     }
 }
