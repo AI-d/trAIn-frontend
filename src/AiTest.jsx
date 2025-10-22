@@ -7,6 +7,9 @@ const AiTest = () => {
     const audioWs = useRef(null);    // 오디오 WS
     const localStreamRef = useRef(null); // localStream 저장용
     const [connected, setConnected] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isAiResponding, setIsAiResponding] = useState(false);
+
 
     const initConnection = async () => {
         const scenarioId = 1;
@@ -103,11 +106,6 @@ const AiTest = () => {
                     }
                 };
 
-                // 상대 스트림 표시
-                pcRef.current.ontrack = (e) => {
-                    console.log("Remote track 수신");
-                };
-
                 // Offer 생성 및 전송
                 const offer = await pcRef.current.createOffer();
                 await pcRef.current.setLocalDescription(offer);
@@ -128,6 +126,9 @@ const AiTest = () => {
                     const workletNode = new AudioWorkletNode(audioContext, 'audio-processor');
 
                     workletNode.port.onmessage = (event) => {
+
+                        if(!isSpeaking) return;
+
                         // Float32 -> Int16 변환
                         const float32Array = new Float32Array(event.data);
                         const int16Array = new Int16Array(float32Array.length);
@@ -190,6 +191,26 @@ const AiTest = () => {
         }
     };
 
+    const handleSpeakToggle = () => {
+        if (!connected || isAiResponding) return;
+
+        if (!isSpeaking) {
+            // 말하기 시작
+            console.log("🎙 말하기 시작");
+            setIsSpeaking(true);
+        } else {
+            // 말하기 종료
+            console.log("말하기 종료");
+            setIsSpeaking(false);
+
+            if (audioWs.current && audioWs.current.readyState === WebSocket.OPEN) {
+                audioWs.current.send(JSON.stringify({ type: "speech.end" }));
+                console.log("speech.end 전송 완료");
+                setIsAiResponding(true);
+            }
+        }
+    };
+
     const closeConnection = () => {
         console.log("연결 종료 시작...");
 
@@ -202,6 +223,9 @@ const AiTest = () => {
         }
 
         setConnected(false);
+        setIsSpeaking(false);
+        setIsAiResponding(false);
+
         console.log("연결 해제 완료");
     };
 
@@ -212,33 +236,20 @@ const AiTest = () => {
     }, []);
 
     return (
-        <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-            padding: "20px",
-            fontFamily: "Arial, sans-serif"
-        }}>
-            <div style={{
-                display: "flex",
-                gap: "10px",
-                alignItems: "center",
-                padding: "15px",
-                backgroundColor: "#f5f5f5",
-                borderRadius: "8px"
-            }}>
+        <div style={{ padding: 20, fontFamily: "Arial, sans-serif" }}>
+            <h2>🎧 GPT Realtime 대화 테스트</h2>
+
+            {/* 연결 버튼 */}
+            <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
                 <button
                     onClick={initConnection}
                     disabled={connected}
                     style={{
-                        padding: "12px 24px",
-                        fontSize: "16px",
-                        fontWeight: "bold",
+                        padding: "10px 20px",
                         backgroundColor: connected ? "#ccc" : "#4CAF50",
                         color: "white",
                         border: "none",
-                        borderRadius: "4px",
-                        cursor: connected ? "not-allowed" : "pointer"
+                        borderRadius: 4,
                     }}
                 >
                     🚀 연결
@@ -247,78 +258,59 @@ const AiTest = () => {
                     onClick={closeConnection}
                     disabled={!connected}
                     style={{
-                        padding: "12px 24px",
-                        fontSize: "16px",
-                        fontWeight: "bold",
+                        padding: "10px 20px",
                         backgroundColor: !connected ? "#ccc" : "#f44336",
                         color: "white",
                         border: "none",
-                        borderRadius: "4px",
-                        cursor: !connected ? "not-allowed" : "pointer"
+                        borderRadius: 4,
                     }}
                 >
                     🛑 해제
                 </button>
-                <div style={{
-                    marginLeft: "20px",
-                    fontSize: "18px",
-                    fontWeight: "bold"
-                }}>
+                <span>
+          상태:{" "}
                     {connected ? (
-                        <span style={{ color: "#4CAF50" }}>● 연결됨</span>
+                        <b style={{ color: "green" }}>● 연결됨</b>
                     ) : (
-                        <span style={{ color: "#999" }}>○ 연결 안됨</span>
+                        <b style={{ color: "gray" }}>○ 연결 안됨</b>
                     )}
-                </div>
+        </span>
             </div>
 
-            <div style={{
-                display: "flex",
-                gap: "20px",
-                padding: "20px",
-                backgroundColor: "#fff",
-                border: "2px solid #ddd",
-                borderRadius: "8px"
-            }}>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: "0 0 10px 0" }}>🎤 내 오디오</h3>
-                </div>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: "0 0 10px 0" }}>🤖 AI 응답</h3>
-                </div>
-            </div>
-
-            <div style={{
-                padding: "15px",
-                backgroundColor: "#e3f2fd",
-                border: "2px solid #2196F3",
-                borderRadius: "8px"
-            }}>
-                <h3 style={{ margin: "0 0 10px 0" }}>💡 사용 방법</h3>
-                <ol style={{ margin: 0, paddingLeft: "20px" }}>
-                    <li>서버 로그를 열어두고 시작하세요</li>
-                    <li>"🚀 연결" 버튼을 클릭하세요</li>
-                    <li>브라우저 콘솔(F12)을 열어서 로그를 확인하세요</li>
-                    <li>서버 로그에서 "GPT 세션 생성 시작" 메시지를 확인하세요</li>
-                    <li>마이크 권한을 허용하세요</li>
-                </ol>
-            </div>
-
-            <div style={{
-                padding: "15px",
-                backgroundColor: "#fff3cd",
-                border: "2px solid #ffc107",
-                borderRadius: "8px",
-                fontSize: "14px"
-            }}>
-                <h3 style={{ margin: "0 0 10px 0" }}>⚠️ 체크리스트</h3>
-                <ul style={{ margin: 0, paddingLeft: "20px" }}>
-                    <li>✅ DB에 scenarioId=1 시나리오가 있는지 확인</li>
-                    <li>✅ public/audio-processor.js 파일이 있는지 확인</li>
-                    <li>✅ 서버가 9090 포트에서 실행 중인지 확인</li>
-                    <li>✅ OpenAI API 키가 설정되어 있는지 확인</li>
-                    <li>✅ HTTPS 또는 localhost에서 실행 중인지 확인</li>
-                </ul>
+            {/* 탭으로 말하기 */}
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "15px",
+                    alignItems: "center",
+                    marginTop: 20,
+                }}
+            >
+                <button
+                    onClick={handleSpeakToggle}
+                    disabled={!connected || isAiResponding}
+                    style={{
+                        width: 150,
+                        height: 150,
+                        borderRadius: "50%",
+                        fontSize: 20,
+                        border: "none",
+                        color: "white",
+                        backgroundColor: isSpeaking
+                            ? "#f44336"
+                            : isAiResponding
+                                ? "#2196F3"
+                                : "#4CAF50",
+                        cursor: connected ? "pointer" : "not-allowed",
+                    }}
+                >
+                    {isSpeaking
+                        ? "🗣 말하는 중"
+                        : isAiResponding
+                            ? "🤖 응답 중"
+                            : "🎤 눌러서 말하기"}
+                </button>
             </div>
         </div>
     );
