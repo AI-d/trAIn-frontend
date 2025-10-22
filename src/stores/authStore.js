@@ -1,8 +1,10 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
+// src/stores/authStore.js
 
-import { setAccessTokenGetter } from '@/services/tokenManager';
+import {create} from 'zustand';
+import {devtools} from 'zustand/middleware';
+import {immer} from 'zustand/middleware/immer';
+
+import {setAccessTokenGetter} from '@/services/tokenManager';
 import * as authApi from '@/services/authApiClient';
 import * as userApi from '@/services/userApiClient';
 
@@ -25,43 +27,43 @@ export const useAuthStore = create(
 
             /** 앱 시작/새로고침 시 세션 복구 (RT로 AT 재발급) */
             initializeAuth: async () => {
-                set({ status: 'loading' });
+                set({status: 'loading'});
                 try {
-                    const { default: apiClient } = await import('@/services/apiClient');
-                    const { data } = await apiClient.post('/users/refresh'); // 쿠키 기반
+                    const {default: apiClient} = await import('@/services/apiClient');
+                    const {data} = await apiClient.post('/users/refresh'); // 쿠키 기반
                     // unwrap 내부에서 plain/래퍼 모두 대응
-                    const { unwrap } = await import('@/services/normalize');
+                    const {unwrap} = await import('@/services/normalize');
                     const normalized = unwrap(data);
                     const newAccessToken = normalized?.data?.accessToken || normalized?.data;
 
                     if (!newAccessToken) throw new Error('No access token in refresh response.');
 
-                    set({ accessToken: newAccessToken });
+                    set({accessToken: newAccessToken});
                     await get().fetchUser();
-                } catch (error) {
+                } catch {
                     get().clearAuth();
                 }
             },
 
             /** 로컬 로그인 */
             login: async (credentials) => {
-                set({ status: 'loading', error: null });
+                set({status: 'loading', error: null});
                 try {
                     const resp = await authApi.login(credentials);
-                    set({ accessToken: resp.accessToken });
+                    set({accessToken: resp.accessToken});
                     await get().fetchUser();
                 } catch (error) {
-                    set({ status: 'unauthenticated', error: error.response?.data || error });
+                    set({status: 'unauthenticated', error: error.response?.data || error});
                     throw error;
                 }
             },
 
             /** 소셜 기존회원: ?code= → 교환 */
             exchangeCode: async (code) => {
-                set({ status: 'loading', error: null });
+                set({status: 'loading', error: null});
                 try {
                     const resp = await authApi.exchangeToken(code); // { accessToken }
-                    set({ accessToken: resp.accessToken });
+                    set({accessToken: resp.accessToken});
                     await get().fetchUser();
                 } catch (error) {
                     get().clearAuth(error.response?.data);
@@ -70,13 +72,13 @@ export const useAuthStore = create(
 
             /** 소셜 신규회원 완료 */
             completeSocialSignup: async (payload) => {
-                set({ status: 'loading', error: null });
+                set({status: 'loading', error: null});
                 try {
                     const resp = await authApi.completeSocialSignup(payload); // { accessToken, ... }
-                    set({ accessToken: resp.accessToken });
+                    set({accessToken: resp.accessToken});
                     await get().fetchUser();
                 } catch (error) {
-                    set({ status: 'unauthenticated', error: error.response?.data || error });
+                    set({status: 'unauthenticated', error: error.response?.data || error});
                     throw error;
                 }
             },
@@ -95,22 +97,22 @@ export const useAuthStore = create(
             fetchUser: async () => {
                 try {
                     const me = await userApi.getMyProfile();
-                    set({ user: me, status: 'authenticated', error: null });
+                    set({user: me, status: 'authenticated', error: null});
                 } catch (error) {
                     get().clearAuth(error.response?.data);
                 }
             },
 
             /** AccessToken 수동 세팅 (인터셉터 갱신 시 사용) */
-            setAccessToken: (token) => set({ accessToken: token }),
+            setAccessToken: (token) => set({accessToken: token}),
 
             /** 인증 초기화 */
-            clearAuth: (error = null) => set({ ...initialState, status: 'unauthenticated', error }),
+            clearAuth: (error = null) => set({...initialState, status: 'unauthenticated', error}),
 
             /** 에러 초기화 */
-            clearError: () => set({ error: null }),
+            clearError: () => set({error: null}),
         })),
-        { name: 'auth-store' }
+        {name: 'auth-store'}
     )
 );
 

@@ -1,7 +1,7 @@
 // src/services/authApiClient.js
 
 import apiClient from '@/services/apiClient';
-import { unwrap } from '@/services/normalize';
+import {unwrap} from '@/services/normalize';
 
 /**
  * @fileoverview 인증 관련 API 모듈
@@ -13,7 +13,7 @@ import { unwrap } from '@/services/normalize';
  * @returns {Promise<import('./types').SignupResponseDto>}
  */
 export async function signup(payload) {
-    const { data } = await apiClient.post('/users/signup', payload);
+    const {data} = await apiClient.post('/users/signup', payload);
     return unwrap(data).data;
 }
 
@@ -23,7 +23,7 @@ export async function signup(payload) {
  * @returns {Promise<import('./types').LoginResponseDto>}
  */
 export async function login(payload) {
-    const { data } = await apiClient.post('/users/login', payload);
+    const {data} = await apiClient.post('/users/login', payload);
     return unwrap(data).data; // { accessToken, ... }
 }
 
@@ -32,8 +32,8 @@ export async function login(payload) {
  * @returns {Promise<string>} message
  */
 export async function logout() {
-    const { data } = await apiClient.post('/users/logout');
-    return unwrap(data).data; // "logged out" 등
+    const {data} = await apiClient.post('/users/logout');
+    return unwrap(data).message; // "성공적으로 로그아웃되었습니다."
 }
 
 /**
@@ -42,7 +42,7 @@ export async function logout() {
  * @returns {Promise<{ accessToken:string }>}
  */
 export async function exchangeToken(code) {
-    const { data } = await apiClient.post('/users/token/exchange', { code });
+    const {data} = await apiClient.post('/users/token/exchange', {code});
     return unwrap(data).data; // { accessToken }
 }
 
@@ -52,7 +52,7 @@ export async function exchangeToken(code) {
  * @returns {Promise<import('./types').EmailVerificationResponseDto>}
  */
 export async function verifyEmail(payload) {
-    const { data } = await apiClient.post('/verification/email', payload);
+    const {data} = await apiClient.post('/verification/email', payload);
     return unwrap(data).data;
 }
 
@@ -62,8 +62,8 @@ export async function verifyEmail(payload) {
  * @returns {Promise<string>} message
  */
 export async function resendVerificationEmail(email) {
-    const { data } = await apiClient.post('/verification/email/resend', { email });
-    return unwrap(data).data;
+    const {data} = await apiClient.post('/verification/email/resend', {email});
+    return unwrap(data).message; // "인증 이메일이 재발송되었습니다."
 }
 
 /**
@@ -72,6 +72,6 @@ export async function resendVerificationEmail(email) {
  * @returns {Promise<import('./types').LoginResponseDto>}
  */
 export async function completeSocialSignup(payload) {
-    const { data } = await apiClient.post('/verification/social/complete', payload);
+    const {data} = await apiClient.post('/verification/social/complete', payload);
     return unwrap(data).data; // { accessToken, ... }
 }
