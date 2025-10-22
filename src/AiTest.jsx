@@ -86,7 +86,7 @@ const AiTest = () => {
                         echoCancellation: true,
                         noiseSuppression: true,
                         autoGainControl: true,
-                        sampleRate: 48000
+                        sampleRate: 16000
                     },
                     video: false
                 });
@@ -120,7 +120,7 @@ const AiTest = () => {
                 // 4. AudioContext & AudioWorklet 설정
                 // ---------------------------
                 console.log("AudioWorklet 설정 시작...");
-                const audioContext = new AudioContext({ sampleRate: 48000 });
+                const audioContext = new AudioContext({ sampleRate: 16000 });
                 const source = audioContext.createMediaStreamSource(localStream);
 
                 try {
