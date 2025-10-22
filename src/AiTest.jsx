@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from "axios";
+import {playAudio} from "openai/helpers/audio";
 
 const AiTest = () => {
     const pcRef = useRef(null);
@@ -10,6 +11,8 @@ const AiTest = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isAiResponding, setIsAiResponding] = useState(false);
 
+
+    const isSpeakingRef = useRef(false);
 
     const initConnection = async () => {
         const scenarioId = 1;
@@ -48,6 +51,7 @@ const AiTest = () => {
                 if (event.data instanceof ArrayBuffer) {
                     console.log("GPT 음성 응답 수신:", event.data.byteLength, "bytes");
                     // TODO: 음성 재생
+                    playAudio(event.data);
                 }
             };
 
@@ -127,7 +131,7 @@ const AiTest = () => {
 
                     workletNode.port.onmessage = (event) => {
 
-                        if(!isSpeaking) return;
+                        if(!isSpeakingRef.current) return;
 
                         // Float32 -> Int16 변환
                         const float32Array = new Float32Array(event.data);
@@ -198,10 +202,13 @@ const AiTest = () => {
             // 말하기 시작
             console.log("🎙 말하기 시작");
             setIsSpeaking(true);
+            isSpeakingRef.current = true;
+
         } else {
             // 말하기 종료
             console.log("말하기 종료");
             setIsSpeaking(false);
+            isSpeakingRef.current = false;
 
             if (audioWs.current && audioWs.current.readyState === WebSocket.OPEN) {
                 audioWs.current.send(JSON.stringify({ type: "speech.end" }));
