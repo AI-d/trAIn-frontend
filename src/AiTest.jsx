@@ -19,6 +19,7 @@ const AiTest = () => {
 
     // gpt 대화 로그 상태 추가
     const [gptMessages, setGptMessages] = useState([]);
+    const [userTranscript, setUserTranscript] = useState("");
 
     const initConnection = async () => {
         const scenarioId = 1;
@@ -97,13 +98,14 @@ const AiTest = () => {
 
                 pcRef.current.onicecandidate = (event) => {
                     if (event.candidate) {
+                        console.log("ICE candidate:", event.candidate);
                         wsRef.current.send(JSON.stringify({ type: "ICE_CANDIDATE", candidate: event.candidate }));
                     }
                 };
 
                 const offer = await pcRef.current.createOffer();
                 await pcRef.current.setLocalDescription(offer);
-                wsRef.current.send(JSON.stringify({ type: "OFFER", sdp: offer.sdp }));
+                wsRef.current.send(JSON.stringify({ type: "OFFER", sdp: offer.sdp, sdpType: "offer" }));
 
                 // ---------------------------
                 // 4. AudioWorklet 설정
@@ -140,11 +142,15 @@ const AiTest = () => {
 
             wsRef.current.onmessage = async (event) => {
                 const data = JSON.parse(event.data);
+                console.log("시그널링 메시지:", data);
 
                 if (data.type === "ANSWER") {
                     await pcRef.current.setRemoteDescription({ type: "answer", sdp: data.sdp });
                 } else if (data.type === "ICE_CANDIDATE" && data.candidate) {
                     await pcRef.current.addIceCandidate(data.candidate);
+                } else if(data.type === "user.transcript") {
+                    console.log("사용자 음성 데이터: ", data)
+                    setUserTranscript(prev => prev + data.text);
                 }
             };
 
@@ -253,6 +259,14 @@ const AiTest = () => {
                     {isSpeaking ? "말하는 중" : isAiResponding ? "응답 중" : "눌러서 말하기"}
                 </button>
             </div>
+
+            <div style={{ marginTop: 20 }}>
+                <h3>사용자 발화</h3>
+                <div style={{ minHeight: 40, padding: 10, border: "1px solid #ccc", borderRadius: 4, backgroundColor: "#f9f9f9" }}>
+                    {userTranscript || "말하는 중 텍스트가 표시됩니다..."}
+                </div>
+            </div>
+
         </div>
     );
 };
