@@ -47,11 +47,34 @@ const AiTest = () => {
                 audioWs.current.send(JSON.stringify(initMessage));
             };
 
-            audioWs.current.onmessage = (event) => {
+
+            audioWs.current.onmessage = async (event) => {
                 if (event.data instanceof ArrayBuffer) {
                     console.log("GPT 음성 응답 수신:", event.data.byteLength, "bytes");
                     // TODO: 음성 재생
-                    playAudio(event.data);
+                    if (event.data instanceof ArrayBuffer) {
+                        // PCM 16bit → Float32 변환
+                        const int16Array = new Int16Array(event.data);
+                        const float32Array = new Float32Array(int16Array.length);
+                        for (let i = 0; i < int16Array.length; i++) {
+                            float32Array[i] = int16Array[i] / 32768; // 16bit → -1~1
+                        }
+
+                        // AudioContext 재생
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({
+                            sampleRate: 48000,
+                        });
+
+                        const buffer = audioCtx.createBuffer(1, float32Array.length, 48000);
+                        buffer.copyToChannel(float32Array, 0);
+
+                        const source = audioCtx.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(audioCtx.destination);
+                        source.start(0);
+
+                        console.log("GPT 오디오 재생 시작");
+                    }
                 }
             };
 
