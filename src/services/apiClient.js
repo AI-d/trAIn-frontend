@@ -14,22 +14,22 @@ import {unwrap} from '@/services/normalize';
 
 /**
  * 환경 변수(VITE_*)를 기반으로 백엔드 API의 기본 URL을 결정합니다.
- * VITE_BACKEND_DOMAIN이 최우선으로 사용되며,
+ * VITE_API_BASE_URL이 최우선으로 사용되며,
  * VITE_USE_DYNAMIC_HOST가 true이면 현재 window.location을 사용합니다.
  *
  * @returns {string} API 기본 URL (e.g., "http://localhost:9090")
  */
 function getBackendBaseUrl() {
-    const backendDomain = import.meta.env.VITE_BACKEND_DOMAIN;
-    if (backendDomain && backendDomain.trim()) return backendDomain;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
+    if (baseUrl && baseUrl.trim()) return baseUrl;
 
-    const useDynamicHost = import.meta.env.VITE_USE_DYNAMIC_HOST === 'true';
+    const useDynamicHost = import.meta.env.VITE_API_BASE_URL === 'true';
     if (useDynamicHost) {
         const {hostname, protocol} = window.location;
-        const backendPort = import.meta.env.VITE_BACKEND_PORT || '9090';
+        const backendPort = import.meta.env.VITE_API_BASE_URL || '9090';
         return `${protocol}//${hostname}:${backendPort}`;
     }
-    const backendPort = import.meta.env.VITE_BACKEND_PORT || '9090';
+    const backendPort = import.meta.env.VITE_API_BASE_URL || '9090';
     return `http://localhost:${backendPort}`;
 }
 
