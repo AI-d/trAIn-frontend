@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import axios from "axios";
 
 const AiTest = () => {
+    const MAX_QUEUE_SIZE = 50;
+
     const pcRef = useRef(null);
     const wsRef = useRef(null);      // 시그널링 WS
     const audioWs = useRef(null);    // 오디오 WS
@@ -14,6 +16,9 @@ const AiTest = () => {
     const isSpeakingRef = useRef(false);
     const gptAudioQueue = useRef([]);
     const isPlayingRef = useRef(false);
+
+    // gpt 대화 로그 상태 추가
+    const [gptMessages, setGptMessages] = useState([]);
 
     const initConnection = async () => {
         const scenarioId = 1;
@@ -47,8 +52,17 @@ const AiTest = () => {
             audioWs.current.onmessage = (event) => {
                 if (!(event.data instanceof ArrayBuffer)) return;
 
+                if(gptAudioQueue.current.length >= MAX_QUEUE_SIZE) {
+                    console.log("오디오 큐 한계 도달, 오래된 데이터 제거");
+                    gptAudioQueue.current.shift();
+                }
+
                 // 큐에 저장
                 gptAudioQueue.current.push(event.data);
+
+                // 화면용 메시지 추가 (간단히 "GPT 음성 수신" 표시)
+                setGptMessages(prev => [...prev, `GPT 음성 ${event.data.byteLength} bytes 수신`]);
+
                 playQueue();
             };
 
@@ -153,10 +167,10 @@ const AiTest = () => {
     const playQueue = () => {
         if (isPlayingRef.current || gptAudioQueue.current.length === 0) return;
 
+        isPlayingRef.current = true;
+
         const chunk = gptAudioQueue.current.shift();
         if (!chunk || !audioCtxRef.current) return;
-
-        isPlayingRef.current = true;
         setIsAiResponding(true);
 
         const int16Array = new Int16Array(chunk);
