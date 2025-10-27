@@ -5,8 +5,8 @@ import {devtools} from 'zustand/middleware';
 import {immer} from 'zustand/middleware/immer';
 
 import {setAccessTokenGetter} from '@/services/tokenManager';
-import * as authApi from '@/services/authApiClient';
-import * as userApi from '@/services/userApiClient';
+import * as authService from '@/services/authService';
+import * as userService from '@/services/userService';
 
 /**
  * @fileoverview 인증 상태(Zustand)
@@ -32,7 +32,7 @@ export const useAuthStore = create(
                     const {default: apiClient} = await import('@/services/apiClient');
                     const {data} = await apiClient.post('/users/refresh'); // 쿠키 기반
                     // unwrap 내부에서 plain/래퍼 모두 대응
-                    const {unwrap} = await import('@/services/normalize');
+                    const {unwrap} = await import('@/services/responseNormalizer.js');
                     const normalized = unwrap(data);
                     const newAccessToken = normalized?.data?.accessToken || normalized?.data;
 
@@ -49,7 +49,7 @@ export const useAuthStore = create(
             login: async (credentials) => {
                 set({status: 'loading', error: null});
                 try {
-                    const resp = await authApi.login(credentials);
+                    const resp = await authService.login(credentials);
                     set({accessToken: resp.accessToken});
                     await get().fetchUser();
                 } catch (error) {
@@ -62,11 +62,12 @@ export const useAuthStore = create(
             exchangeCode: async (code) => {
                 set({status: 'loading', error: null});
                 try {
-                    const resp = await authApi.exchangeToken(code); // { accessToken }
+                    const resp = await authService.exchangeToken(code);
                     set({accessToken: resp.accessToken});
                     await get().fetchUser();
                 } catch (error) {
-                    get().clearAuth(error.response?.data);
+                    set({status: 'unauthenticated', error: error.response?.data || error});
+                    throw error; // 일관성을 위해 추가
                 }
             },
 
@@ -74,7 +75,7 @@ export const useAuthStore = create(
             completeSocialSignup: async (payload) => {
                 set({status: 'loading', error: null});
                 try {
-                    const resp = await authApi.completeSocialSignup(payload); // { accessToken, ... }
+                    const resp = await authService.completeSocialSignup(payload); // { accessToken, ... }
                     set({accessToken: resp.accessToken});
                     await get().fetchUser();
                 } catch (error) {
@@ -87,7 +88,7 @@ export const useAuthStore = create(
             logout: async () => {
                 get().clearAuth();
                 try {
-                    await authApi.logout();
+                    await authService.logout();
                 } catch (error) {
                     console.warn('Logout API failed:', error);
                 }
@@ -96,7 +97,7 @@ export const useAuthStore = create(
             /** 내 프로필 로드 */
             fetchUser: async () => {
                 try {
-                    const me = await userApi.getMyProfile();
+                    const me = await userService.getMyProfile();
                     set({user: me, status: 'authenticated', error: null});
                 } catch (error) {
                     get().clearAuth(error.response?.data);

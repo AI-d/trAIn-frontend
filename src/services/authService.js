@@ -1,7 +1,7 @@
-// src/services/authApiClient.js
+// src/services/authService.js
 
 import apiClient from '@/services/apiClient';
-import {unwrap} from '@/services/normalize';
+import {unwrap} from '@/services/responseNormalizer';
 
 /**
  * @fileoverview 인증 관련 API 모듈

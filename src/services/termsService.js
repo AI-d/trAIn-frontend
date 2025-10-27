@@ -1,7 +1,7 @@
-// src/services/termsApiClient.js
+// src/services/termsService.js
 
 import apiClient from '@/services/apiClient';
-import {unwrap} from '@/services/normalize';
+import {unwrap} from '@/services/responseNormalizer';
 
 /**
  * @fileoverview 약관 관련 API

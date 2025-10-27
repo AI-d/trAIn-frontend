@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import {getAccessToken} from '@/services/tokenManager';
-import {unwrap} from '@/services/normalize';
+import {unwrap} from '@/services/responseNormalizer';
 
 /**
  * @fileoverview Axios 인스턴스 & 인터셉터 (401→RTR 자동 처리)
@@ -23,13 +23,13 @@ function getBackendBaseUrl() {
     const baseUrl = import.meta.env.VITE_API_BASE_URL;
     if (baseUrl && baseUrl.trim()) return baseUrl;
 
-    const useDynamicHost = import.meta.env.VITE_API_BASE_URL === 'true';
+    const useDynamicHost = import.meta.env.VITE_USE_DYNAMIC_HOST === 'true';
+    const backendPort = import.meta.env.VITE_BACKEND_PORT || '9090';
+
     if (useDynamicHost) {
         const {hostname, protocol} = window.location;
-        const backendPort = import.meta.env.VITE_API_BASE_URL || '9090';
         return `${protocol}//${hostname}:${backendPort}`;
     }
-    const backendPort = import.meta.env.VITE_API_BASE_URL || '9090';
     return `http://localhost:${backendPort}`;
 }
 
@@ -48,6 +48,10 @@ const apiClient = axios.create({
     headers: {'Content-Type': 'application/json'},
     timeout: 10000, // 필요 시 업로드 전용 별도 인스턴스 권장 (30~60초)
 });
+
+const ROUTES = {
+    LOGIN: '/auth/login'
+};
 
 /**
  * (Request Interceptor)
@@ -141,7 +145,7 @@ apiClient.interceptors.response.use(
             } finally {
                 const next = encodeURIComponent(window.location.pathname + window.location.search);
                 // TODO: '/auth/login' 경로는 TJ님의 라우터 설정에 맞게 수정이 필요할 수 있습니다.
-                window.location.href = `/auth/login?next=${next}`;
+                window.location.href = `${ROUTES.LOGIN}?next=${next}`;
             }
             return Promise.reject(error);
         }
