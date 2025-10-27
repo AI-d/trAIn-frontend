@@ -1,4 +1,4 @@
-// src/services/normalize.js
+// src/services/responseNormalizer.js
 
 /**
  * @fileoverview 서버 응답 포맷 정규화 유틸
@@ -13,19 +13,20 @@
  * @returns {{ success: boolean, data: T|null, message?: string, errorCode?: string }}
  */
 export function unwrap(respData) {
-    // 래퍼: { success, data, message, errorCode, timestamp... }
-    if (
-        respData &&
-        Object.prototype.hasOwnProperty.call(respData, 'success') &&
-        Object.prototype.hasOwnProperty.call(respData, 'data')
-    ) {
+    // null/undefined 체크
+    if (!respData || typeof respData !== 'object') {
+        return {success: false, data: null};
+    }
+
+    // ApiResponse 래퍼 형태인지 확인
+    if ('success' in respData && 'data' in respData) {
         return {
             success: !!respData.success,
             data: respData.data ?? null,
-            message: respData.message,
-            errorCode: respData.errorCode,
+            message: respData.message || null,
+            errorCode: respData.errorCode || null,
         };
     }
-    // 원형 DTO: 그대로 data로 간주
-    return { success: true, data: respData ?? null };
+    // 원형 DTO
+    return {success: true, data: respData};
 }
