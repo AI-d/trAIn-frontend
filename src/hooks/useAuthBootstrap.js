@@ -1,7 +1,7 @@
 // src/hooks/useAuthBootstrap.js
 
-import { useEffect } from 'react';
-import { useAuthStore } from '@/stores/authStore';
+import {useEffect} from 'react';
+import {useAuthStore} from '@/stores/authStore';
 
 /**
  * @fileoverview 앱 최초 진입 시:
@@ -22,7 +22,8 @@ export function useAuthBootstrap() {
                     await exchangeCode(code);
                     // URL에서 code 제거
                     url.searchParams.delete('code');
-                    window.history.replaceState({}, '', url.pathname + (url.search ? `?${url.searchParams}` : ''));
+                    const cleanUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
+                    window.history.replaceState({}, '', cleanUrl);
                 } else {
                     await initializeAuth();
                 }
