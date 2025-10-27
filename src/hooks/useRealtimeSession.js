@@ -1,4 +1,4 @@
-import {useCallback, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import axios from "axios";
 import apiClient from "@/services/apiClient.js";
 
@@ -49,7 +49,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         try {
 
             // 1. 백엔드에 세션 생성 요청
-            const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId: 1 });
+            const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId});
             const newSessionId = sessionResponse.data.data.sessionId;
             setSessionId(newSessionId);
 
@@ -65,25 +65,184 @@ export const useRealtimeSession = (scenarioId, userId) => {
             console.log('Ephemeral Key 발급 완료');
 
             // 3. webSocket 연결
+            initWebSocket(sessionId, false);
+
             // 4. webRtc 연결
             await initWebRtc(ephemeralKey, newSessionId);
 
         } catch (err) {
             console.error("Realtime 연결 실패:", err);
             // 연결 정리
+            cleanupConnection();
+
         } finally {
             setLoading(false);
         }
-
 
     }
 
     /**
      * webSocket 연결 초기화
      */
-    const initWebSocket = () => {
+    const initWebSocket = useCallback((sessionId, isReconnection = false) => {
+        if(wsRef.current?.readyState === WebSocket.OPEN) {
+            console.log("webSocket 이미 연결 됨");
+            return;
+        }
 
-    }
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.hostname}:9090/ws/audio/${sessionId}`;
+
+        console.log('webSocket 연결 시도: ', wsUrl);
+        wsRef.current = new WebSocket(wsUrl);
+
+        wsRef.current.onopen = () => {
+            console.log("webSocket 연결 성공");
+            setWsConnected(true);
+            // 재시도 횟수
+            reconnectAttemptsRef.current = 0;
+
+            // 재연결
+            if(isReconnection) {
+                console.log("재연결 시도 - 대화 내역 복구 요청");
+                wsRef.current.send(JSON.stringify({
+                    type: "SESSION_RECONNECT",
+                    sessionId: sessionId,
+                    timestamp: new Date().toISOString()
+                }));
+                setReconnecting(false);
+            } else {
+                // 신규 연결 시 세션 초기화
+                wsRef.current.send(JSON.stringify({
+                    type: "SESSION_INIT",
+                    sessionId: sessionId,
+                    scenarioId: scenarioId,
+                    timestamp: new Date().toISOString()
+                }));
+            }
+        };
+
+        wsRef.current.onmessage = (e) => {
+            try {
+                const message = JSON.parse(e.data);
+                handleWebSocketMessage(message);
+            } catch (err) {
+                console.log("webSocket 메세지 파싱 실패: err");
+            }
+        };
+
+        wsRef.current.onerror = (err) => {
+            console.error("webSocket 에러:", err);
+        }
+
+        wsRef.current.onclose = (e) => {
+            console.log("webSocket 종료: ", e.code, e.reason);
+            setWsConnected(false);
+
+            // 정상 종료(1000)가 아니면서 재연결 시도 횟수가 5회 미만이면 재연결 시도
+            if(e.code !== 1000 && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+                attemptReconnect(sessionId);
+            }
+        };
+
+    }, [scenarioId]);
+
+    /**
+     * webSocket 메세지 처리
+     */
+    const handleWebSocketMessage = useCallback((message) => {
+
+        console.log("webSocket 메세지 수신: ", message.type);
+        switch (message.type) {
+            case 'SESSION_RECOVERY':
+                handleSessionRecovery(message);
+                break;
+
+            // 백엔드 저장 확인 메세지
+            case 'user.transcript':
+                console.log("사용자 발화 저장 완료: ", message.text);
+                break;
+
+            case 'ai.transcript':
+                console.log("AI 발화 저장 완료: ", message.text);
+                break;
+
+            case 'ERROR':
+                console.log('webSocket 에러 발생: ', message.message);
+                break;
+
+            default:
+                console.log('알 수 없는 메세지 타입: ', message.type);
+
+        }
+
+    }, []);
+
+    /**
+     * 세션 재연결 및 대화 내역 복구
+     */
+    const handleSessionRecovery = useCallback((message) => {
+
+        console.log("세션 복구 메세지: ", message);
+
+        if(!message.success) {
+            console.log("세션 복구 실패: ", message.errorMessage);
+            return;
+        }
+
+        // 대화 내역 복원
+        if(message.transcripts && message.transcripts.length > 0) {
+            const recovered = message.transcripts.map(item => ({
+                speaker: item.speaker.toLowerCase(),
+                text: item.text,
+                timestamp: item.timestamp
+            }));
+
+            setTranscripts(recovered);
+            console.log(`대화 내역 복구 완료: ${recovered.length} 개 메세지`);
+        } else {
+            console.log("복구할 대화 내역 없음");
+        }
+
+    }, []);
+
+    /**
+     * webSocket 재연결 시도
+     */
+    const attemptReconnect = useCallback((sessionId) => {
+
+        reconnectAttemptsRef.current++;
+        const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttemptsRef.current - 1);
+
+        console.log(`재연결 시도 ${reconnectAttemptsRef.current} / ${MAX_RECONNECT_ATTEMPTS} (${delay}ms 후)`);
+        setReconnecting(true);
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+            initWebSocket(sessionId, true);
+        }, delay);
+
+    }, [initWebSocket]);
+
+    /**
+     * 백엔드로 대화 내용 전송
+     */
+    const sendTranscript = useCallback((speaker, text) => {
+
+        if(!wsRef.current || wsRef.current.readState !== WebSocket.OPEN) {
+            console.log("webSocket 연결 안됨 - 대화 내용 전송 실패");
+            return;
+        }
+
+        wsRef.current.send(JSON.stringify({
+            type: "TRANSCRIPT",
+            speaker: speaker.toUpperCase(), // USER 또는 AI
+            text: text,
+            timestamp: new Date().toISOString()
+        }));
+
+        console.log(`대화 내용 전송: ${speaker} - ${text.subString(0, 50)}...`);
+
+    }, []);
 
     /**
      * webRtc 연결 초기화
@@ -115,6 +274,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     setTranscripts(prev => [...prev, transcript]);
 
                     // webSocket 으로 실시간 전송
+                    sendTranscript('ai', data.transcript);
                 }
                 if (data.type === 'conversation.item.input_audio_transcription.completed') {
                     const transcripts = {
@@ -125,6 +285,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     setTranscripts(prev => [...prev, transcripts]);
 
                     // webSocket 으로 실시간 전송
+                    sendTranscript('user', data.transcript);
                 }
             } catch (err) {
                 console.error("이벤트 파싱 실패:", err);
@@ -183,7 +344,34 @@ export const useRealtimeSession = (scenarioId, userId) => {
         const answerSdp = await sdpResponse.text();
         await pcRef.current.setRemoteDescription({ type: "answer", sdp: answerSdp });
         console.log("WebRtc 연결됨");
-    }
+    };
+
+    /**
+     * 사용자 발화 토글
+     */
+    const handleUserToggle = useCallback(() => {
+
+        if(!connected || aiSpeaking) return;
+
+        if(!userSpeaking) {
+            setUserSpeaking(true);
+            console.log("사용자 발화 시작");
+        } else {
+            setUserSpeaking(false);
+            console.log("사용자 발화 종료");
+
+            if(dataChannelRef.current?.readyState === "open") {
+                dataChannelRef.current.send(JSON.stringify({
+                    type: "input_audio_buffer.commit"
+                }));
+                dataChannelRef.current.send(JSON.stringify({
+                    type: "response.create"
+                }));
+            }
+        }
+
+    }, [connected, aiSpeaking, userSpeaking]);
+
 
     /**
      * 세션 종료
@@ -243,4 +431,29 @@ export const useRealtimeSession = (scenarioId, userId) => {
         setReconnecting(false);
         reconnectAttemptsRef.current = 0;
     }, []);
+
+    // 컴포넌트 언마운트 시 정리
+    useEffect(() => {
+        return () => cleanupConnection();
+    }, [cleanupConnection]);
+
+    return {
+        // 상태
+        connected,
+        wsConnected,
+        sessionId,
+        transcripts,
+        loading,
+        aiSpeaking,
+        userSpeaking,
+        reconnecting,
+
+        // 함수
+        initRealtimeConnection,
+        handleUserToggle,
+        handleEndSession,
+
+        // Refs (audio 태그용)
+        audioTagRef
+    };
 }
