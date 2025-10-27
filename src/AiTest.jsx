@@ -11,7 +11,7 @@ import {useRealtimeSession} from "@/hooks/useRealtimeSession.js";
  */
 const AiRealtimeTest = () => {
 
-    const scenarioId = 1;
+    const scenarioId = 2;
     const userId = 1;
 
     const {

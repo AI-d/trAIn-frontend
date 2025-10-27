@@ -26,11 +26,18 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const audioContextRef = useRef(null);
     const audioQueueRef = useRef([]);
     const isPlayingRef = useRef(false);
+    const audioCheckIntervalRef = useRef(null);
 
     // webSocket 관련
     const wsRef = useRef(null);
     const reconnectTimeoutRef = useRef(null);
     const reconnectAttemptsRef = useRef(0);
+
+    // 발화 시간 관련
+    const userSpeakingStartRef = useRef(null);
+    const aiSpeakingStartRef = useRef(null);
+    const lastUserSpeakingTimeRef = useRef(null);
+    const lastAiSpeakingTimeRef = useRef(null);
 
     // 상태 관리
     const [connected, setConnected] = useState(false);
@@ -62,7 +69,8 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 sessionId: newSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01",
                 voice: "alloy",
-                sttModel: "whisper-1"
+                sttModel: "whisper-1",
+                language: "ko"
             });
             if (!ephemeralResponse.data.success) throw new Error(ephemeralResponse.data.message || "Ephemeral Key 발급 실패");
             const ephemeralKey = ephemeralResponse.data.data.client_secret.value;
@@ -237,10 +245,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
             return;
         }
 
+        const timeInfo = speaker === 'user' ? lastUserSpeakingTimeRef.current : lastAiSpeakingTimeRef.current;
+
         wsRef.current.send(JSON.stringify({
             type: "TRANSCRIPT",
             speaker: speaker.toUpperCase(), // USER 또는 AI
             text: text,
+            startTimeMs: timeInfo?.startMs || Date.now(),
+            endTimeMs: timeInfo?.endMs || Date.now(),
             timestamp: new Date().toISOString()
         }));
 
@@ -264,35 +276,53 @@ export const useRealtimeSession = (scenarioId, userId) => {
         };
 
         dataChannelRef.current.onmessage = (event) => {
+            console.log("메시지 받음! 원본:", event.data?.substring(0, 100));
             try {
                 const data = JSON.parse(event.data);
 
-                if (data.type === "response.audio_buffer.started") setAiSpeaking(true);
-                if (data.type === "response.audio.done") {
-                    console.log("GPT 오디오 스트림 완료");
-                    setTimeout(() => {
-                        setAiSpeaking(false);
-                        console.log("AI 발화 종료");
-                    }, 500);
+                // 오디오 시작
+                if (data.type === "output.audio_buffer.started") {
+                    console.log("AI 발화 시작");
+                    setAiSpeaking(true);
                 }
+
+                if (data.type === "output.audio_buffer.stopped") {
+                    console.log("AI 발화 종료");
+                    setAiSpeaking(false);
+                }
+
                 if (data.type === "response.audio_transcript.done") {
                     const transcript = {
                         speaker: 'ai',
                         text: data.transcript,
-                        timestamp: new Date().toISOString()
+                        timestamp: aiSpeakingStartRef.current
+                            ? new Date(aiSpeakingStartRef.current).toISOString()
+                            : new Date().toISOString()
                     }
-                    setTranscripts(prev => [...prev, transcript]);
+                    setTranscripts(prev => {
+                        const updated = [...prev, transcript];
+                        return updated.sort((a, b) =>
+                            new Date(a.timestamp) - new Date(b.timestamp)
+                        );
+                    });
 
                     // webSocket 으로 실시간 전송
                     sendTranscript('ai', data.transcript);
                 }
                 if (data.type === 'conversation.item.input_audio_transcription.completed') {
-                    const transcripts = {
+                    const transcript = {
                         speaker: 'user',
                         text: data.transcript,
-                        timestamp: new Date().toISOString()
+                        timestamp: userSpeakingStartRef.current
+                            ? new Date(userSpeakingStartRef.current).toISOString()
+                            : new Date().toISOString()
                     }
-                    setTranscripts(prev => [...prev, transcripts]);
+                    setTranscripts(prev => {
+                        const updated = [...prev, transcript];
+                        return updated.sort((a, b) =>
+                            new Date(a.timestamp) - new Date(b.timestamp)
+                        );
+                    });
 
                     // webSocket 으로 실시간 전송
                     sendTranscript('user', data.transcript);
@@ -308,15 +338,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
         const localStream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
+                noiseSuppression: false,
+                autoGainControl: false,
                 sampleRate: 24000,
-                channelCount: 1,
-
-                googEchoCancellation: true,
-                googNoiseSuppression: true,
-                googAutoGainControl: true,
-                googHighpassFilter: true
+                channelCount: 1
             }
         });
         localStreamRef.current = localStream;
@@ -328,26 +353,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
             const remoteStream = event.streams[0];
             if (remoteStream.getAudioTracks().length === 0) return;
 
-
-
             if (audioTagRef.current) {
                 audioTagRef.current.srcObject = remoteStream;
-
-                // 오디오 끝까지 재생 보장
-                audioTagRef.current.onended = () => {
-                    console.log("오디오 재생 완료");
-                };
-
-                audioTagRef.current.onpause = () => {
-                    console.log(" 오디오 일시정지됨");
-                };
-
-                audioTagRef.current.onerror = (err) => {
-                    console.error("오디오 재생 에러:", err);
-                };
-
-                // autoplay 명시적 설정
                 audioTagRef.current.autoplay = true;
+
                 audioTagRef.current.play()
                     .then(() => console.log("오디오 재생 시작"))
                     .catch(err => console.error("재생 실패:", err));
@@ -395,6 +404,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
         } else {
             setUserSpeaking(false);
             console.log("사용자 발화 종료");
+
+            // 임시 placeholder 추가
+            setTranscripts(prev => [...prev, {
+                speaker: 'user',
+                text: '처리 중...',
+                timestamp: new Date().toISOString(),
+                isTemp: true
+            }]);
 
             if(dataChannelRef.current?.readyState === "open") {
                 dataChannelRef.current.send(JSON.stringify({
@@ -475,6 +492,48 @@ export const useRealtimeSession = (scenarioId, userId) => {
     useEffect(() => {
         return () => cleanupConnection();
     }, [cleanupConnection]);
+
+    // 사용자 발화 시간 측정
+    useEffect(() => {
+        if(userSpeaking) {
+            userSpeakingStartRef.current = Date.now();
+            console.log("사용자 발회 시작");
+        } else if(userSpeakingStartRef.current) {
+            const startMs = userSpeakingStartRef.current;
+            const endMs = Date.now();
+            const duration = endMs - startMs;
+
+            console.log(`사용자 발화 종료: ${(duration/1000).toFixed(1)}초`);
+
+            // 발화 시간 저장
+            lastUserSpeakingTimeRef.current = {
+                startMs, endMs, duration
+            }
+
+            userSpeakingStartRef.current = null;
+        }
+    }, [userSpeaking]);
+
+    // AI 발화 시간 측정
+    useEffect(() => {
+        if(aiSpeaking) {
+            aiSpeakingStartRef.current = Date.now();
+            console.log("AI 발화 시작");
+        } else if(aiSpeakingStartRef.current) {
+            const startMs = aiSpeakingStartRef.current;
+            const endMs = Date.now();
+            const duration = endMs - startMs;
+
+            console.log(`AI 발화 종료: ${(duration/1000).toFixed(1)}초`);
+
+            // 발화 시간 저장
+            lastAiSpeakingTimeRef.current = {
+                startMs, endMs, duration
+            }
+
+            aiSpeakingStartRef.current = null;
+        }
+    }, [aiSpeaking]);
 
     return {
         // 상태
