@@ -1,5 +1,4 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import axios from "axios";
 import apiClient from "@/services/apiClient.js";
 
 /**
@@ -22,6 +21,11 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const localStreamRef = useRef(null);
     const dataChannelRef = useRef(null);
     const audioTagRef = useRef(null);
+
+    // 오디오 관련
+    const audioContextRef = useRef(null);
+    const audioQueueRef = useRef([]);
+    const isPlayingRef = useRef(false);
 
     // webSocket 관련
     const wsRef = useRef(null);
@@ -49,7 +53,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         try {
 
             // 1. 백엔드에 세션 생성 요청
-            const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId});
+            const sessionResponse = await apiClient.post('/sessions', {scenarioId, userId});
             const newSessionId = sessionResponse.data.data.sessionId;
             setSessionId(newSessionId);
 
@@ -65,7 +69,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
             console.log('Ephemeral Key 발급 완료');
 
             // 3. webSocket 연결
-            initWebSocket(sessionId, false);
+            initWebSocket(newSessionId, false);
 
             // 4. webRtc 연결
             await initWebRtc(ephemeralKey, newSessionId);
@@ -91,7 +95,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         }
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.hostname}:9090/ws/audio/${sessionId}`;
+        const wsUrl = `${protocol}//${window.location.hostname}:9090/ws/transcript/${sessionId}`;
 
         console.log('webSocket 연결 시도: ', wsUrl);
         wsRef.current = new WebSocket(wsUrl);
@@ -127,7 +131,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 const message = JSON.parse(e.data);
                 handleWebSocketMessage(message);
             } catch (err) {
-                console.log("webSocket 메세지 파싱 실패: err");
+                console.log("webSocket 메세지 파싱 실패: ", err);
             }
         };
 
@@ -228,7 +232,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
      */
     const sendTranscript = useCallback((speaker, text) => {
 
-        if(!wsRef.current || wsRef.current.readState !== WebSocket.OPEN) {
+        if(!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.log("webSocket 연결 안됨 - 대화 내용 전송 실패");
             return;
         }
@@ -240,7 +244,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
             timestamp: new Date().toISOString()
         }));
 
-        console.log(`대화 내용 전송: ${speaker} - ${text.subString(0, 50)}...`);
+        console.log(`대화 내용 전송: ${speaker} - ${text.substring(0, 50)}...`);
 
     }, []);
 
@@ -264,7 +268,13 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 const data = JSON.parse(event.data);
 
                 if (data.type === "response.audio_buffer.started") setAiSpeaking(true);
-                if (data.type === "response.audio.done") setAiSpeaking(false);
+                if (data.type === "response.audio.done") {
+                    console.log("GPT 오디오 스트림 완료");
+                    setTimeout(() => {
+                        setAiSpeaking(false);
+                        console.log("AI 발화 종료");
+                    }, 500);
+                }
                 if (data.type === "response.audio_transcript.done") {
                     const transcript = {
                         speaker: 'ai',
@@ -301,7 +311,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 noiseSuppression: true,
                 autoGainControl: true,
                 sampleRate: 24000,
-                channelCount: 1
+                channelCount: 1,
+
+                googEchoCancellation: true,
+                googNoiseSuppression: true,
+                googAutoGainControl: true,
+                googHighpassFilter: true
             }
         });
         localStreamRef.current = localStream;
@@ -312,9 +327,30 @@ export const useRealtimeSession = (scenarioId, userId) => {
             if (!event.streams || event.streams.length === 0) return;
             const remoteStream = event.streams[0];
             if (remoteStream.getAudioTracks().length === 0) return;
+
+
+
             if (audioTagRef.current) {
                 audioTagRef.current.srcObject = remoteStream;
-                audioTagRef.current.play().catch(err => console.error(err));
+
+                // 오디오 끝까지 재생 보장
+                audioTagRef.current.onended = () => {
+                    console.log("오디오 재생 완료");
+                };
+
+                audioTagRef.current.onpause = () => {
+                    console.log(" 오디오 일시정지됨");
+                };
+
+                audioTagRef.current.onerror = (err) => {
+                    console.error("오디오 재생 에러:", err);
+                };
+
+                // autoplay 명시적 설정
+                audioTagRef.current.autoplay = true;
+                audioTagRef.current.play()
+                    .then(() => console.log("오디오 재생 시작"))
+                    .catch(err => console.error("재생 실패:", err));
             }
         };
 
@@ -365,7 +401,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     type: "input_audio_buffer.commit"
                 }));
                 dataChannelRef.current.send(JSON.stringify({
-                    type: "response.create"
+                    type: "response.create",
+                    response: {
+                        modalities: ["audio", "text"]
+                    }
                 }));
             }
         }
@@ -381,7 +420,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         setLoading(true);
         try {
             if (!sessionId) { cleanupConnection(); return; }
-            await apiClient.post(`${sessionId}/complete`, {sessionId});
+            await apiClient.put(`sessions/${sessionId}/complete`, {sessionId});
             cleanupConnection();
             alert("대화가 종료되었습니다!");
         } catch (err) {
