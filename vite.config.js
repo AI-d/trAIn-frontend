@@ -17,6 +17,15 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  optimizeDeps: {
+    exclude: ['onnxruntime-web'],
+  },
+  assetsInclude: ['**/*.wasm', '**/*.jsep.mjs'],
+    build: {
+      rollupOptions: {
+        external: ['onnxruntime-web'],
+      },
+    },
   test: {
     projects: [{
       extends: true,
@@ -39,5 +48,5 @@ export default defineConfig({
         setupFiles: ['.storybook/vitest.setup.js']
       }
     }]
-  }
+  },
 });
