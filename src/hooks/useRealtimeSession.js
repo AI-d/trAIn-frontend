@@ -34,6 +34,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const aiSpeakingStartRef = useRef(null);
     const lastUserSpeakingTimeRef = useRef(null);
     const lastAiSpeakingTimeRef = useRef(null);
+    const aiSpeakingTimeoutRef = useRef(null);
 
 
     // PTT + VAD 관련
@@ -42,6 +43,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const isVadListeningRef = useRef(false);
     const pttTimerRef = useRef(null);
     const vadInstanceRef = useRef(null);
+
 
     // PTT 설정
     const PTT_MAX_DURATION = 30000; // 30초
@@ -289,6 +291,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
         dataChannelRef.current.onmessage = (event) => {
             console.log("메시지 받음! 원본:", event.data?.substring(0, 100));
+
             try {
                 const data = JSON.parse(event.data);
 
@@ -296,12 +299,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 if (data.type === "output_audio_buffer.started") {
                     console.log("AI 발화 시작");
                     setAiSpeaking(true);
+                    aiSpeakingStartRef.current = Date.now();
                 }
 
                 if (data.type === "output_audio_buffer.stopped") {
                     console.log("AI 발화 종료");
                     setAiSpeaking(false);
                     setVadStatus('idle');
+
                 }
 
                 if (data.type === "response.audio_transcript.done") {
@@ -312,16 +317,25 @@ export const useRealtimeSession = (scenarioId, userId) => {
                             ? new Date(aiSpeakingStartRef.current).toISOString()
                             : new Date().toISOString()
                     }
+
                     setTranscripts(prev => {
                         const filtered = prev.filter(t => !t.isTemp);
                         const updated = [...filtered, transcript];
-                        return updated.sort((a, b) =>
-                            new Date(a.timestamp) - new Date(b.timestamp)
-                        );
+
+                        // 강제 순서 정렬
+                        return updated.sort((a, b) => {
+                            const timeDiff = new Date(a.timestamp) - new Date(b.timestamp);
+                            if (Math.abs(timeDiff) < 1000) {  // 1초 이내면
+                                if (a.speaker === 'user') return -1;  // user 먼저
+                                if (b.speaker === 'user') return 1;
+                            }
+                            return timeDiff;
+                        });
                     });
 
                     // webSocket 으로 실시간 전송
                     sendTranscript('ai', data.transcript);
+
                 }
                 if (data.type === 'conversation.item.input_audio_transcription.completed') {
                     const transcript = {
@@ -331,12 +345,20 @@ export const useRealtimeSession = (scenarioId, userId) => {
                             ? new Date(userSpeakingStartRef.current).toISOString()
                             : new Date().toISOString()
                     }
+
                     setTranscripts(prev => {
                         const filtered = prev.filter(t => !t.isTemp);
                         const updated = [...filtered, transcript];
-                        return updated.sort((a, b) =>
-                            new Date(a.timestamp) - new Date(b.timestamp)
-                        );
+
+                        // 강제 순서 정렬
+                        return updated.sort((a, b) => {
+                            const timeDiff = new Date(a.timestamp) - new Date(b.timestamp);
+                            if (Math.abs(timeDiff) < 1000) {  // 1초 이내면
+                                if (a.speaker === 'user') return -1;  // user 먼저
+                                if (b.speaker === 'user') return 1;
+                            }
+                            return timeDiff;
+                        });
                     });
 
                     // webSocket 으로 실시간 전송
@@ -604,7 +626,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
             setTranscripts(prev => [...prev, {
                 speaker: 'user',
                 text: '처리 중...',
-                timestamp: new Date().toISOString(),
+                timestamp: userSpeakingStartRef.current
+                    ? new Date(userSpeakingStartRef.current).toISOString()
+                    : new Date().toISOString(),
                 isTemp: true
             }]);
 
