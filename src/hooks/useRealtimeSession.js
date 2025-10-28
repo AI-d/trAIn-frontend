@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import apiClient from "@/services/apiClient.js";
+import {useMicVAD} from "@ricky0123/vad-react";
 
 /**
  * GPT Realtime + WebSocket 통합 Hook
@@ -8,6 +9,7 @@ import apiClient from "@/services/apiClient.js";
  * 1. WebRTC P2P로 GPT와 음성 통신
  * 2. WebSocket으로 백엔드에 대화 내역 실시간 전송
  * 3. 재연결 시 대화 내역 복구
+ * 4. STT 환경 현상 감소를 위해 PTT + VAD를 통합
  *
  * @param {number} scenarioId - 시나리오 ID
  * @param {number} userId - 사용자 ID
@@ -38,6 +40,18 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const aiSpeakingStartRef = useRef(null);
     const lastUserSpeakingTimeRef = useRef(null);
     const lastAiSpeakingTimeRef = useRef(null);
+
+    // PTT + VAD 관련
+    const [isPttActive, setIsPttActive] = useState(false);
+    const [vadStatus, setVadStatus] = useState('idle'); // idle, listening, speaking, processing
+    const audioChunksRef = useRef([]);
+    const isVadListeningRef = useRef(false);
+    const pttTimerRef = useRef(null);
+    const vadInstanceRef = useRef(null);
+
+    // PTT 설정
+    const PTT_MAX_DURATION = 30000; // 30초
+    const VAD_SILENCE_TIMEOUT = 1000; // 1초 침묵 후 종료
 
     // 상태 관리
     const [connected, setConnected] = useState(false);
@@ -390,6 +404,60 @@ export const useRealtimeSession = (scenarioId, userId) => {
         await pcRef.current.setRemoteDescription({ type: "answer", sdp: answerSdp });
         console.log("WebRtc 연결됨");
     };
+
+    /**
+     *  VAD 설정
+     */
+    const vad = useMicVAD({
+        startOnLoad: false,
+
+        // vad 민감도 설정
+        positiveSpeechThreshold: 0.8,  // 음성 감지 민감도 (높을수록 덜 민감)
+        negativeSpeechThreshold: 0.5,  // 침묵 감지 민감도
+        redemptionFrames: 8,           // 짧은 침묵 무시 (프레임 수)
+        minSpeechFrames: 3,            // 최소 음성 프레임
+        preSpeechPadFrames: 1,         // 음성 시작 전 여유 프레임
+
+        onSpeechStart: () => {
+            console.log("VAD: 음성 감지 시작");
+            isVadListeningRef.current = true;
+            setVadStatus('speaking');
+            userSpeakingStartRef.current = Date.now();
+        },
+
+        onSpeechEnd: (audio) => {
+            console.log("VAD: 음성 감지 종료 (자동)");
+
+            // ptt 가 여전히 활성화 된 경우만 처리
+            if(!isPttActive) {
+                console.log("PTT 비활성화 상태 - 오디오 처리 건너뜀");
+                return;
+            }
+
+            isVadListeningRef.current = false;
+            setVadStatus('processing');
+
+            const endMs = Date.now();
+            lastUserSpeakingTimeRef.current = {
+                startMs: userSpeakingStartRef.current,
+                endMs,
+                duration: endMs - userSpeakingStartRef.current
+            }
+
+            console.log(`발화 시간: ${(lastUserSpeakingTimeRef.current.duration / 1000).toFixed(2)}초`);
+
+            // VAD가 감지한 발화 종료 시 오디오 처리
+            processAudioForRealtimeAPI(audio, 'vad_auto');
+        },
+
+        onVADMisfire: () => {
+            console.log('VAD: 오감지 (false positive)');
+        },
+
+        // 실시간 오디오 프레임 수집
+        onFrameProcessed: (probabilities) => {
+        }
+    })
 
     /**
      * 사용자 발화 토글

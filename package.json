@@ -12,6 +12,8 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@ricky0123/vad-react": "^0.0.34",
+    "@ricky0123/vad-web": "^0.0.28",
     "antd": "^5.27.4",
     "axios": "^1.12.2",
     "openai": "^4.104.0",
