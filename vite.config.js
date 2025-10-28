@@ -42,5 +42,5 @@ export default defineConfig({
         setupFiles: ['.storybook/vitest.setup.js']
       }
     }]
-  }
+  },
 });
