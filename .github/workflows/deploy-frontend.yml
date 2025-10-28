@@ -4,7 +4,7 @@ name: Deploy Frontend to S3
 on:
   push:
     branches:
-      - ops/cicd
+      - ops/ci
     paths:
       - 'frontend/**'  # frontend 폴더 변경 시에만 실행
       - '.github/workflows/deploy-frontend.yml'
