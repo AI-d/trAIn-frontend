@@ -6,7 +6,12 @@ on:
     branches:
       - ops/ci
     paths:
-      - 'trAIn-frontend/**'  # frontend 폴더 변경 시에만 실행
+      # 변경 시에만 실행
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
       - '.github/workflows/deploy-frontend.yml'
 
 # 환경 변수
@@ -28,16 +33,14 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: './trAIn-frontend/package-lock.json'
+          cache-dependency-path: '.package-lock.json'
 
       # 3단계: 의존성 설치
       - name: Install dependencies
-        working-directory: ./frontend
         run: npm ci
 
       # 4단계: 프로덕션 빌드
       - name: Build project
-        working-directory: ./frontend
         run: npm run build
         env:
           VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
@@ -52,7 +55,6 @@ jobs:
 
       # 6단계: S3에 파일 업로드
       - name: Deploy to S3
-        working-directory: ./frontend
         run: |
           aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} \
             --delete \
