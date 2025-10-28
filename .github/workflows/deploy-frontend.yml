@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: '.package-lock.json'
+          cache-dependency-path: './package-lock.json'
 
       # 3단계: 의존성 설치
       - name: Install dependencies
