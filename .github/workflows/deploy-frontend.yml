@@ -1,0 +1,79 @@
+name: Deploy Frontend to S3
+
+# 트리거 조건: main 브랜치에 push하면 실행 (현재는 dev, 추후 main으로 변경)
+on:
+  push:
+    branches:
+      - ops/ci
+    paths:
+      # 변경 시에만 실행
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
+      - '.github/workflows/deploy-frontend.yml'
+
+# 환경 변수
+env:
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # GitHub가 제공하는 Ubuntu 서버
+
+    steps:
+      # 1단계: 코드 다운로드
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2단계: Node.js 설치
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
+
+      # 3단계: 의존성 설치
+      - name: Install dependencies
+        run: npm ci
+
+      # 4단계: 프로덕션 빌드
+      - name: Build project
+        run: npm run build
+        env:
+          VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+
+      # 5단계: AWS 자격 증명 설정
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 6단계: S3에 파일 업로드
+      - name: Deploy to S3
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+          echo "Files uploaded to S3"
+
+      # 7단계: CloudFront 캐시 무효화
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+          echo "CloudFront cache invalidated"
+
+      # 8단계: 배포 완료 알림
+      - name: Deployment completed
+        run: |
+          echo "================================"
+          echo "Frontend deployed successfully!"
+          echo "Main URL: https://dialogym.shop"
+          echo "Alt URL: https://www.dialogym.shop"
+          echo "================================"
