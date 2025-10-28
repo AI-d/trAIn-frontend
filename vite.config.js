@@ -17,15 +17,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  optimizeDeps: {
-    exclude: ['onnxruntime-web'],
+  server: {
+    port: 5050,
   },
-  assetsInclude: ['**/*.wasm', '**/*.jsep.mjs'],
-    build: {
-      rollupOptions: {
-        external: ['onnxruntime-web'],
-      },
-    },
   test: {
     projects: [{
       extends: true,
