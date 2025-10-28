@@ -24,6 +24,7 @@ const AiTest = () => {
         aiSpeaking,
         userSpeaking,
         reconnecting,
+        isInitialGreeting,
 
         // 신규 PTT/VAD 상태
         isPttActive,
@@ -227,7 +228,7 @@ const AiTest = () => {
                     {/* 메인 PTT 버튼 */}
                     <button
                         onClick={handleUserToggle}
-                        disabled={aiSpeaking || !connected}
+                        disabled={aiSpeaking || !connected || isInitialGreeting}
                         style={{
                             padding: '20px 40px',
                             fontSize: '18px',

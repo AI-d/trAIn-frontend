@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import apiClient from "@/services/apiClient.js";
-import {useMicVAD} from "@ricky0123/vad-react";
 
 /**
  * GPT Realtime + WebSocket 통합 Hook
@@ -9,12 +8,7 @@ import {useMicVAD} from "@ricky0123/vad-react";
  * 1. WebRTC P2P로 GPT와 음성 통신
  * 2. WebSocket으로 백엔드에 대화 내역 실시간 전송
  * 3. 재연결 시 대화 내역 복구
- * 4. STT 환경 현상 감소를 위해 PTT + VAD를 통합
- *
- * @param {number} scenarioId - 시나리오 ID
- * @param {number} userId - 사용자 ID
- * @returns {Object} 세션 상태 및 제어 함수
- *
+ * 4. 사용자: PTT (수동), AI: VAD (자동)
  */
 export const useRealtimeSession = (scenarioId, userId) => {
 
@@ -34,19 +28,19 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const aiSpeakingStartRef = useRef(null);
     const lastUserSpeakingTimeRef = useRef(null);
     const lastAiSpeakingTimeRef = useRef(null);
-    const aiSpeakingTimeoutRef = useRef(null);
 
-
-    // PTT + VAD 관련
+    // PTT 관련
     const [isPttActive, setIsPttActive] = useState(false);
-    const [vadStatus, setVadStatus] = useState('idle'); // idle, listening, speaking, processing
-    const isVadListeningRef = useRef(false);
+    const [vadStatus, setVadStatus] = useState('idle');
     const pttTimerRef = useRef(null);
-    const vadInstanceRef = useRef(null);
 
+    // AI 음성 분석 관련
+    const audioContextRef = useRef(null);
+    const aiAudioAnalyserRef = useRef(null);
+    const aiSilenceCheckIntervalRef = useRef(null);
 
     // PTT 설정
-    const PTT_MAX_DURATION = 30000; // 30초
+    const PTT_MAX_DURATION = 30000;
 
     // 상태 관리
     const [connected, setConnected] = useState(false);
@@ -57,6 +51,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const [aiSpeaking, setAiSpeaking] = useState(false);
     const [userSpeaking, setUserSpeaking] = useState(false);
     const [reconnecting, setReconnecting] = useState(false);
+    const [isInitialGreeting, setIsInitialGreeting] = useState(true);
 
     const MAX_RECONNECT_ATTEMPTS = 5;
     const RECONNECT_DELAY = 2000;
@@ -66,14 +61,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
      */
     const initRealtimeConnection = async () => {
         setLoading(true);
+        setIsInitialGreeting(true);
         try {
-
-            // 1. 백엔드에 세션 생성 요청
             const sessionResponse = await apiClient.post('/sessions', {scenarioId, userId});
             const newSessionId = sessionResponse.data.data.sessionId;
             setSessionId(newSessionId);
 
-            // 2. gpt-realtime webRtc 연결 임시 키 발급
             const ephemeralResponse = await apiClient.post('/realtime/session', {
                 sessionId: newSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01",
@@ -85,21 +78,15 @@ export const useRealtimeSession = (scenarioId, userId) => {
             const ephemeralKey = ephemeralResponse.data.data.client_secret.value;
             console.log('Ephemeral Key 발급 완료');
 
-            // 3. webSocket 연결
             initWebSocket(newSessionId, false);
-
-            // 4. webRtc 연결
             await initWebRtc(ephemeralKey, newSessionId);
 
         } catch (err) {
             console.error("Realtime 연결 실패:", err);
-            // 연결 정리
             cleanupConnection();
-
         } finally {
             setLoading(false);
         }
-
     }
 
     /**
@@ -120,10 +107,8 @@ export const useRealtimeSession = (scenarioId, userId) => {
         wsRef.current.onopen = () => {
             console.log("webSocket 연결 성공");
             setWsConnected(true);
-            // 재시도 횟수
             reconnectAttemptsRef.current = 0;
 
-            // 재연결
             if(isReconnection) {
                 console.log("재연결 시도 - 대화 내역 복구 요청");
                 wsRef.current.send(JSON.stringify({
@@ -133,7 +118,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 }));
                 setReconnecting(false);
             } else {
-                // 신규 연결 시 세션 초기화
                 wsRef.current.send(JSON.stringify({
                     type: "SESSION_INIT",
                     sessionId: sessionId,
@@ -160,7 +144,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
             console.log("webSocket 종료: ", e.code, e.reason);
             setWsConnected(false);
 
-            // 정상 종료(1000)가 아니면서 재연결 시도 횟수가 5회 미만이면 재연결 시도
             if(e.code !== 1000 && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
                 attemptReconnect(sessionId);
             }
@@ -172,38 +155,29 @@ export const useRealtimeSession = (scenarioId, userId) => {
      * webSocket 메세지 처리
      */
     const handleWebSocketMessage = useCallback((message) => {
-
         console.log("webSocket 메세지 수신: ", message.type);
         switch (message.type) {
             case 'SESSION_RECOVERY':
                 handleSessionRecovery(message);
                 break;
-
-            // 백엔드 저장 확인 메세지
             case 'user.transcript':
                 console.log("사용자 발화 저장 완료: ", message.text);
                 break;
-
             case 'ai.transcript':
                 console.log("AI 발화 저장 완료: ", message.text);
                 break;
-
             case 'ERROR':
                 console.log('webSocket 에러 발생: ', message.message);
                 break;
-
             default:
                 console.log('알 수 없는 메세지 타입: ', message.type);
-
         }
-
     }, []);
 
     /**
      * 세션 재연결 및 대화 내역 복구
      */
     const handleSessionRecovery = useCallback((message) => {
-
         console.log("세션 복구 메세지: ", message);
 
         if(!message.success) {
@@ -211,7 +185,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
             return;
         }
 
-        // 대화 내역 복원
         if(message.transcripts && message.transcripts.length > 0) {
             const recovered = message.transcripts.map(item => ({
                 speaker: item.speaker.toLowerCase(),
@@ -224,14 +197,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
         } else {
             console.log("복구할 대화 내역 없음");
         }
-
     }, []);
 
     /**
      * webSocket 재연결 시도
      */
     const attemptReconnect = useCallback((sessionId) => {
-
         reconnectAttemptsRef.current++;
         const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttemptsRef.current - 1);
 
@@ -248,7 +219,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
      * 백엔드로 대화 내용 전송
      */
     const sendTranscript = useCallback((speaker, text) => {
-
         if(!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
             console.log("webSocket 연결 안됨 - 대화 내용 전송 실패");
             return;
@@ -258,7 +228,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
         wsRef.current.send(JSON.stringify({
             type: "TRANSCRIPT",
-            speaker: speaker.toUpperCase(), // USER 또는 AI
+            speaker: speaker.toUpperCase(),
             text: text,
             startTimeMs: timeInfo?.startMs || Date.now(),
             endTimeMs: timeInfo?.endMs || Date.now(),
@@ -266,6 +236,56 @@ export const useRealtimeSession = (scenarioId, userId) => {
         }));
 
         console.log(`대화 내용 전송: ${speaker} - ${text.substring(0, 50)}...`);
+    }, []);
+
+    /**
+     * AI 음성 침묵 감지
+     */
+    const startAiVadCheck = useCallback(() => {
+        if (!aiAudioAnalyserRef.current) {
+            console.log("⚠️ VAD 시작 실패: analyser 없음");
+            return;
+        }
+
+        // 이미 실행 중이면 중복 방지
+        if (aiSilenceCheckIntervalRef.current) {
+            console.log("⚠️ VAD 이미 실행 중");
+            return;
+        }
+
+        const analyser = aiAudioAnalyserRef.current;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let silenceCount = 0;
+        const SILENCE_THRESHOLD = 5;
+        const SILENCE_CHECKS = 5;
+
+        const checkSilence = () => {
+            // aiSpeaking 체크 제거! 무조건 끝까지 분석
+
+            analyser.getByteFrequencyData(dataArray);
+            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+            if (average < SILENCE_THRESHOLD) {
+                silenceCount++;
+                console.log(`🔇 침묵 ${silenceCount}/${SILENCE_CHECKS} (레벨: ${average.toFixed(1)})`);
+
+                if (silenceCount >= SILENCE_CHECKS) {
+                    console.log("✅ AI 발화 종료 (침묵 감지)");
+                    setAiSpeaking(false);
+                    setVadStatus('idle');
+                    clearInterval(aiSilenceCheckIntervalRef.current);
+                    aiSilenceCheckIntervalRef.current = null;
+                }
+            } else {
+                if (silenceCount > 0) {
+                    console.log(`🔊 음성 재개 (레벨: ${average.toFixed(1)})`);
+                }
+                silenceCount = 0;
+            }
+        };
+
+        aiSilenceCheckIntervalRef.current = setInterval(checkSilence, 200);
+        console.log("🎤 AI VAD 체크 시작");
 
     }, []);
 
@@ -275,21 +295,26 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const initWebRtc = async (ephemeralKey, sessionId) => {
 
         // 1. peerConnection 설정
-        pcRef.current = new RTCPeerConnection({ iceServers: [
-            // stun 서버
-            { urls: "stun:stun.l.google.com:19302" },
-            // trun 서버
-            {
-                urls: "turn:openrelay.metered.ca:80",
-                username: "openrelayproject",
-                credential: "openrelayproject"
-            }
-            ] });
+        pcRef.current = new RTCPeerConnection({
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                {
+                    urls: "turn:openrelay.metered.ca:80",
+                    username: "openrelayproject",
+                    credential: "openrelayproject"
+                }
+            ]
+        });
 
         // 2. DataChannel 설정
         dataChannelRef.current = pcRef.current.createDataChannel('oai-events');
+
         dataChannelRef.current.onopen = () => {
-            console.log("Data Channel 열림");
+            console.log("✅ Data Channel 열림");
+            setIsInitialGreeting(true); // ✅ 최초 인사 시작
+            setConnected(true); // ✅ 여기서 connected!
+
+            // AI가 먼저 인사하도록 response.create 전송
             dataChannelRef.current.send(JSON.stringify({
                 type: "response.create",
                 response: {
@@ -304,30 +329,24 @@ export const useRealtimeSession = (scenarioId, userId) => {
             try {
                 const data = JSON.parse(event.data);
 
-                // 오디오 시작
+                // AI 발화 시작
                 if (data.type === "output_audio_buffer.started") {
-                    console.log("AI 발화 시작");
+                    console.log("🤖 AI 발화 시작");
                     setAiSpeaking(true);
                     aiSpeakingStartRef.current = Date.now();
                 }
 
+                // AI 발화 종료 - VAD 시작
                 if (data.type === "output_audio_buffer.stopped") {
-
-                    if (aiSpeakingTimeoutRef.current) {
-                        clearTimeout(aiSpeakingTimeoutRef.current);
-                        aiSpeakingTimeoutRef.current = null;
-                    }
-
-                    aiSpeakingTimeoutRef.current = setTimeout(() => {
-                        console.log("AI 발화 종료");
-                        setAiSpeaking(false);
-                        setVadStatus('idle');
-                        aiSpeakingTimeoutRef.current = null;
-                    }, 1000);
-
+                    console.log("🔊 오디오 버퍼 정지 - VAD 시작");
+                    startAiVadCheck();
                 }
 
+                // AI 텍스트 응답
                 if (data.type === "response.audio_transcript.done") {
+                    // ✅ 최초 인사 완료
+                    setIsInitialGreeting(false);
+
                     const transcript = {
                         speaker: 'ai',
                         text: data.transcript,
@@ -340,21 +359,20 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         const filtered = prev.filter(t => !t.isTemp);
                         const updated = [...filtered, transcript];
 
-                        // 강제 순서 정렬
                         return updated.sort((a, b) => {
                             const timeDiff = new Date(a.timestamp) - new Date(b.timestamp);
-                            if (Math.abs(timeDiff) < 1000) {  // 1초 이내면
-                                if (a.speaker === 'user') return -1;  // user 먼저
+                            if (Math.abs(timeDiff) < 1000) {
+                                if (a.speaker === 'user') return -1;
                                 if (b.speaker === 'user') return 1;
                             }
                             return timeDiff;
                         });
                     });
 
-                    // webSocket 으로 실시간 전송
                     sendTranscript('ai', data.transcript);
-
                 }
+
+                // 사용자 STT 완료
                 if (data.type === 'conversation.item.input_audio_transcription.completed') {
                     const transcript = {
                         speaker: 'user',
@@ -368,24 +386,23 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         const filtered = prev.filter(t => !t.isTemp);
                         const updated = [...filtered, transcript];
 
-                        // 강제 순서 정렬
                         return updated.sort((a, b) => {
                             const timeDiff = new Date(a.timestamp) - new Date(b.timestamp);
-                            if (Math.abs(timeDiff) < 1000) {  // 1초 이내면
-                                if (a.speaker === 'user') return -1;  // user 먼저
+                            if (Math.abs(timeDiff) < 1000) {
+                                if (a.speaker === 'user') return -1;
                                 if (b.speaker === 'user') return 1;
                             }
                             return timeDiff;
                         });
                     });
 
-                    // webSocket 으로 실시간 전송
                     sendTranscript('user', data.transcript);
                 }
             } catch (err) {
                 console.error("이벤트 파싱 실패:", err);
             }
         };
+
         dataChannelRef.current.onerror = (err) => console.error("DataChannel 에러:", err);
         dataChannelRef.current.onclose = () => console.log("DataChannel 닫힘");
 
@@ -401,26 +418,47 @@ export const useRealtimeSession = (scenarioId, userId) => {
         });
         localStreamRef.current = localStream;
 
-        // 초기에는 마이크 설정 비활성화로 시작
         localStream.getTracks().forEach(track => {
             track.enabled = false;
             pcRef.current.addTrack(track, localStream);
             console.log("마이크 초기 상태: 비활성화");
         });
 
-        // 4. 원격 오디오 스트림 설정
+        // 4. AI 오디오 스트림 설정 (핵심!)
         pcRef.current.ontrack = (event) => {
+            console.log("🎵 ontrack 이벤트!");
+
             if (!event.streams || event.streams.length === 0) return;
             const remoteStream = event.streams[0];
             if (remoteStream.getAudioTracks().length === 0) return;
 
+            // 1. audio 태그로 재생 (필수!)
             if (audioTagRef.current) {
                 audioTagRef.current.srcObject = remoteStream;
                 audioTagRef.current.autoplay = true;
-
                 audioTagRef.current.play()
-                    .then(() => console.log("오디오 재생 시작"))
+                    .then(() => console.log("오디오 재생 시작!"))
                     .catch(err => console.error("재생 실패:", err));
+            }
+
+            //  2. AudioContext로 분석 (VAD용)
+            try {
+                if (!audioContextRef.current) {
+                    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                    console.log("AudioContext 생성");
+                }
+
+                const source = audioContextRef.current.createMediaStreamSource(remoteStream);
+                const analyser = audioContextRef.current.createAnalyser();
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = 0.8;
+
+                source.connect(analyser);
+
+                aiAudioAnalyserRef.current = analyser;
+                console.log("AI VAD 분석기 초기화 완료!");
+            } catch (err) {
+                console.error(" AudioContext 설정 실패:", err);
             }
         };
 
@@ -428,13 +466,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
         pcRef.current.oniceconnectionstatechange = () => console.log("ICE 상태:", pcRef.current.iceConnectionState);
         pcRef.current.onconnectionstatechange = () => {
             console.log("연결 상태:", pcRef.current.connectionState);
-            if (pcRef.current.connectionState === 'connected') setConnected(true);
             if (pcRef.current.connectionState === 'disconnected' || pcRef.current.connectionState === 'failed') {
                 handleEndSession();
             }
         };
 
-        // 6. sdp offer/answer
+        // 6. SDP Offer/Answer
         const offer = await pcRef.current.createOffer();
         await pcRef.current.setLocalDescription(offer);
 
@@ -446,6 +483,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
             },
             body: offer.sdp
         });
+
         if (!sdpResponse.ok) throw new Error(`GPT SDP 교환 실패 (${sdpResponse.status})`);
         const answerSdp = await sdpResponse.text();
         await pcRef.current.setRemoteDescription({ type: "answer", sdp: answerSdp });
@@ -453,194 +491,82 @@ export const useRealtimeSession = (scenarioId, userId) => {
     };
 
     /**
-     *  VAD 설정
-     */
-    const vad = useMicVAD({
-        startOnLoad: false,
-
-        // 1. Web Worker가 ONNX 런타임 파일을 CDN에서 찾도록 지정
-        onnxWASMBasePath: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/",
-
-        // 2. VAD 모델 파일(silero_vad_legacy.onnx)을 CDN에서 찾도록 지정
-        baseAssetPath: "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.27/dist/",
-
-        // vad 민감도 설정
-        positiveSpeechThreshold: 0.8,  // 음성 감지 민감도 (높을수록 덜 민감)
-        negativeSpeechThreshold: 0.5,  // 침묵 감지 민감도
-        redemptionFrames: 8,           // 짧은 침묵 무시 (프레임 수)
-        minSpeechFrames: 3,            // 최소 음성 프레임
-        preSpeechPadFrames: 1,         // 음성 시작 전 여유 프레임
-
-        onSpeechStart: () => {
-            console.log("VAD: 음성 감지 시작");
-            isVadListeningRef.current = true;
-            setVadStatus('speaking');
-            userSpeakingStartRef.current = Date.now();
-        },
-
-        onSpeechEnd: () => {
-            console.log("VAD: 음성 감지 종료 (자동)");
-
-            // ptt 가 여전히 활성화 된 경우만 처리
-            if(!isPttActive) {
-                console.log("PTT 비활성화 상태 - 오디오 처리 건너뜀");
-                return;
-            }
-
-            isVadListeningRef.current = false;
-            setVadStatus('processing');
-
-            const endMs = Date.now();
-            lastUserSpeakingTimeRef.current = {
-                startMs: userSpeakingStartRef.current,
-                endMs,
-                duration: endMs - userSpeakingStartRef.current
-            }
-
-            console.log(`발화 시간: ${(lastUserSpeakingTimeRef.current.duration / 1000).toFixed(2)}초`);
-
-            // VAD가 침묵을 감지하면 오디오 버퍼 commit
-            commitAudioBuffer('vad_auto');
-        },
-
-        onVADMisfire: () => {
-            console.log('VAD: 오감지 (false positive)');
-        },
-
-        // 실시간 오디오 프레임 수집
-        /*onFrameProcessed: (probabilities) => {
-            // 디버깅 용
-            if(isPttActive && probabilities.isSpeech > 0.5) {
-                console.log(`음성 확률: ${(probabilities.isSpeech * 100).toFixed(1)}%`);
-            }
-        }*/
-    });
-
-    /**
-     * 마이크 트랙 제어 함수
+     * 마이크 트랙 제어
      */
     const enableMicroPhone = useCallback(() => {
-
         if(!localStreamRef.current) return;
-
         localStreamRef.current.getAudioTracks().forEach(track => {
             track.enabled = true;
         })
         console.log("마이크 활성화");
-
     }, []);
 
     const disableMicroPhone = useCallback(() => {
-
         if(!localStreamRef.current) return;
-
         localStreamRef.current.getAudioTracks().forEach(track => {
             track.enabled = false;
         })
         console.log("마이크 비활성화");
-
     }, []);
 
     /**
-     * PTT 설정
+     * PTT 시작
      */
-    const startPushToTalk = useCallback(async () => {
-
-        if(!connected || aiSpeaking) {
-            console.log("PTT 시작 불가: webRtc 미연결 또는 AI 발화 중");
+    const startPushToTalk = useCallback(() => {
+        if(!connected || aiSpeaking || isInitialGreeting) {
+            console.log("PTT 시작 불가: 미연결 또는 AI 발화 중 또는 최초 인사 중");
             return;
         }
 
-        if(isPttActive) {
-            console.log("이미 PTT 활성화 되어있음");
-            return;
-        }
-
-        console.log("PTT 시작");
+        console.log("🎤 PTT 시작");
+        enableMicroPhone();
         setIsPttActive(true);
         setUserSpeaking(true);
         setVadStatus('listening');
 
-        // 마이크 활성화
-        enableMicroPhone();
-
-        // VAD 시작
-        try {
-           await vadInstanceRef.current?.start();
-
-           // 최대 발화 시간 타이머 설정
-            pttTimerRef.current = setTimeout(() => {
-                console.log("PTT 최대 시간 초과(30초)");
-                stopPushToTalk('timeout');
-            }, PTT_MAX_DURATION);
-
-        } catch(err) {
-            console.log("VAD 시작 실패: ", err);
-            setIsPttActive(false);
-            setUserSpeaking(false);
-            setVadStatus('idle');
-            disableMicroPhone();
-        }
-
-    }, [connected, aiSpeaking, isPttActive, enableMicroPhone, disableMicroPhone]);
+        pttTimerRef.current = setTimeout(() => {
+            console.log("⏰ PTT 30초 타임아웃");
+            stopPushToTalk('timeout');
+        }, PTT_MAX_DURATION);
+    }, [connected, aiSpeaking, isInitialGreeting, enableMicroPhone]);
 
     /**
      * PTT 종료
      */
-    const stopPushToTalk = useCallback(async (reason = 'manual') => {
-
+    const stopPushToTalk = useCallback((reason = 'manual') => {
         if(!isPttActive) {
-            console.log("PTT가 활성화 되지 않음");
+            console.log("PTT 이미 비활성화");
             return;
         }
 
-        console.log(`PTT 종료: ${reason}`);
+        console.log(`🛑 PTT 종료: ${reason}`);
 
-        // 타이머 정리
         if(pttTimerRef.current) {
             clearTimeout(pttTimerRef.current);
             pttTimerRef.current = null;
         }
 
+        disableMicroPhone();
         setIsPttActive(false);
         setUserSpeaking(false);
+        setVadStatus('processing');
 
-        // 마이크 비활성화
-        disableMicroPhone();
-
-        try {
-
-            // VAD 일시 정지
-            await vadInstanceRef.current?.pause();
-
-            if (reason === 'manual') {
-                commitAudioBuffer('manual');
-            }
-
-            setVadStatus('idle');
-
-        } catch (err) {
-            console.log("VAD 중지 실패: ", err);
-            setVadStatus('idle');
-        }
-
+        commitAudioBuffer(reason);
     }, [isPttActive, disableMicroPhone]);
 
     /**
-     * Realtime Api 로 오디오 전송
+     * 오디오 버퍼 전송
      */
     const commitAudioBuffer = useCallback((source = 'unknown') => {
-
-        console.log(`오디오 처리 시작: ${source}`);
+        console.log(`📤 오디오 처리 시작: ${source}`);
 
         if(!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
-            console.log("DataChannel 이 열려있지 않음");
+            console.log("DataChannel 닫힘");
             setVadStatus('idle');
             return;
         }
 
         try {
-            // 임시 placeholder
             setTranscripts(prev => [...prev, {
                 speaker: 'user',
                 text: '처리 중...',
@@ -650,22 +576,21 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 isTemp: true
             }]);
 
-            // 서버에 오디오 버퍼 처리 요청
             dataChannelRef.current.send(JSON.stringify({
                 type: 'input_audio_buffer.commit'
             }));
 
-            // GPT 에게 응답 생성 요청
             dataChannelRef.current.send(JSON.stringify({
                 type: 'response.create',
                 response: {
                     modalities: ["audio", "text"]
                 }
             }));
-            console.log("오디오 전송 완료")
+
+            console.log("✅ 오디오 전송 완료");
 
         } catch (err) {
-            console.log("오디오 전송 실패: ", err);
+            console.log("❌ 오디오 전송 실패: ", err);
             setVadStatus('idle');
         }
 
@@ -682,7 +607,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
         }
     }, [isPttActive, startPushToTalk, stopPushToTalk]);
 
-
     /**
      * 세션 종료
      */
@@ -690,9 +614,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         if (loading) return;
         setLoading(true);
         try {
-            // VAD 종료
             if(isPttActive) {
-                await vadInstanceRef.current?.pause();
                 setIsPttActive(false);
             }
 
@@ -719,19 +641,23 @@ export const useRealtimeSession = (scenarioId, userId) => {
      */
     const cleanupConnection = useCallback(async () => {
 
-        // AI 발화 타이머 정리
-        if (aiSpeakingTimeoutRef.current) {
-            clearTimeout(aiSpeakingTimeoutRef.current);
-            aiSpeakingTimeoutRef.current = null;
+        // AI VAD 정리
+        if (aiSilenceCheckIntervalRef.current) {
+            clearInterval(aiSilenceCheckIntervalRef.current);
+            aiSilenceCheckIntervalRef.current = null;
         }
 
-        // VAD 정리
-        if (vadInstanceRef.current) {
-            try {
-                await vadInstanceRef.current.pause();
-            } catch (err) {
-                console.log("VAD 정리 실패: ", err);
-            }
+        if (audioContextRef.current) {
+            audioContextRef.current.close();
+            audioContextRef.current = null;
+        }
+
+        aiAudioAnalyserRef.current = null;
+
+        // PTT 타이머 정리
+        if (pttTimerRef.current) {
+            clearTimeout(pttTimerRef.current);
+            pttTimerRef.current = null;
         }
 
         // WebRTC 정리
@@ -754,7 +680,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
             wsRef.current = null;
         }
 
-        // PTT 타이머 정리
         if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
             reconnectTimeoutRef.current = null;
@@ -770,16 +695,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
         setReconnecting(false);
         setIsPttActive(false);
         setVadStatus('idle');
+        setIsInitialGreeting(true);
         reconnectAttemptsRef.current = 0;
 
-        console.log("연결 정리 완료");
+        console.log("🧹 연결 정리 완료");
 
     }, []);
-
-    // VAD 인스턴스 저장
-    useEffect(() => {
-        vadInstanceRef.current = vad;
-    }, [vad]);
 
     // 컴포넌트 언마운트 시 정리
     useEffect(() => {
@@ -790,15 +711,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
     useEffect(() => {
         if(userSpeaking) {
             userSpeakingStartRef.current = Date.now();
-            console.log("사용자 발화 시작");
+            console.log("👤 사용자 발화 시작");
         } else if(userSpeakingStartRef.current) {
             const startMs = userSpeakingStartRef.current;
             const endMs = Date.now();
             const duration = endMs - startMs;
 
-            console.log(`사용자 발화 종료: ${(duration/1000).toFixed(1)}초`);
+            console.log(`👤 사용자 발화 종료: ${(duration/1000).toFixed(1)}초`);
 
-            // 발화 시간 저장
             lastUserSpeakingTimeRef.current = {
                 startMs, endMs, duration
             }
@@ -811,15 +731,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
     useEffect(() => {
         if(aiSpeaking) {
             aiSpeakingStartRef.current = Date.now();
-            console.log("AI 발화 시작");
+            console.log("🤖 AI 발화 시작");
         } else if(aiSpeakingStartRef.current) {
             const startMs = aiSpeakingStartRef.current;
             const endMs = Date.now();
             const duration = endMs - startMs;
 
-            console.log(`AI 발화 종료: ${(duration/1000).toFixed(1)}초`);
+            console.log(`🤖 AI 발화 종료: ${(duration/1000).toFixed(1)}초`);
 
-            // 발화 시간 저장
             lastAiSpeakingTimeRef.current = {
                 startMs, endMs, duration
             }
@@ -829,7 +748,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
     }, [aiSpeaking]);
 
     return {
-        // 기존 상태
         connected,
         wsConnected,
         sessionId,
@@ -838,24 +756,20 @@ export const useRealtimeSession = (scenarioId, userId) => {
         aiSpeaking,
         userSpeaking,
         reconnecting,
+        isInitialGreeting,
 
-        // PTT/VAD 상태
         isPttActive,
         vadStatus,
 
-        // 기존 함수
         initRealtimeConnection,
         handleUserToggle,
         handleEndSession,
 
-        // PTT 제어 함수
         startPushToTalk,
         stopPushToTalk,
 
-        // Refs
         audioTagRef,
 
-        // 발화 시간 정보
         lastUserSpeakingTime: lastUserSpeakingTimeRef.current,
         lastAiSpeakingTime: lastAiSpeakingTimeRef.current,
     };
