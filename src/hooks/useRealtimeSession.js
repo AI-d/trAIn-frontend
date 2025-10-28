@@ -53,6 +53,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const [reconnecting, setReconnecting] = useState(false);
     const [isInitialGreeting, setIsInitialGreeting] = useState(true);
 
+    const transcriptsRef = useRef(transcripts);
+
+    const MIN_USER_SPEECH_DURATION = 200;
     const MAX_RECONNECT_ATTEMPTS = 5;
     const RECONNECT_DELAY = 2000;
 
@@ -412,7 +415,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 echoCancellation: true,
                 noiseSuppression: false,
                 autoGainControl: false,
-                sampleRate: 24000,
+                sampleRate: 16000,
                 channelCount: 1
             }
         });
@@ -551,7 +554,18 @@ export const useRealtimeSession = (scenarioId, userId) => {
         setUserSpeaking(false);
         setVadStatus('processing');
 
+        // 1. 컨텍스트 전송
+        sendCurrentContext();
+
+        // 2. 오디오 커밋
         commitAudioBuffer(reason);
+
+        // 3. 응답 요청
+        dataChannelRef.current.send(JSON.stringify({
+            type: 'response.create',
+            response: { modalities: ["audio","text"] }
+        }));
+
     }, [isPttActive, disableMicroPhone]);
 
     /**
@@ -562,6 +576,16 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
         if(!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
             console.log("DataChannel 닫힘");
+            setVadStatus('idle');
+            return;
+        }
+
+        // 발화 길이 확인
+        const startMs = userSpeakingStartRef.current;
+        const duration = startMs ? Date.now() - startMs : 0;
+
+        if(duration <  MIN_USER_SPEECH_DURATION) {
+            console.log(`짧은 발화: ${duration}ms - 전송 생략`);
             setVadStatus('idle');
             return;
         }
@@ -582,9 +606,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
             dataChannelRef.current.send(JSON.stringify({
                 type: 'response.create',
-                response: {
-                    modalities: ["audio", "text"]
-                }
+                response: { modalities: ["audio", "text"] }
             }));
 
             console.log("✅ 오디오 전송 완료");
@@ -606,6 +628,40 @@ export const useRealtimeSession = (scenarioId, userId) => {
             startPushToTalk();
         }
     }, [isPttActive, startPushToTalk, stopPushToTalk]);
+
+    /**
+     * 대화 컨텍스트 전송
+     */
+    const sendCurrentContext = useCallback(() => {
+
+        if(!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
+            console.log("DataChannel 아직 열리지 않음");
+            return;
+        }
+
+        const currentTranscripts = transcriptsRef.current?.filter(t => !t.isTemp) || [];
+
+        if(currentTranscripts.length === 0) {
+            console.log("보낼 컨텍스트 없음");
+            return;
+        }
+
+        const gptMessages = currentTranscripts
+            .map(t => ({
+                role: t.speaker === 'user' ? 'user' : 'model',
+                content: t.text
+            }));
+
+        try {
+            dataChannelRef.current.send(JSON.stringify({
+                type: "conversation.item.create",
+                messages: gptMessages
+            }));
+            console.log(`[컨텍스트 전송] ${gptMessages.length}개 턴`);
+        } catch(err) {
+            console.error("컨텍스트 전송 실패:", err);
+        }
+    }, []);
 
     /**
      * 세션 종료
@@ -695,7 +751,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         setReconnecting(false);
         setIsPttActive(false);
         setVadStatus('idle');
-        setIsInitialGreeting(true);
+        setIsInitialGreeting(true); // ✅ 추가
         reconnectAttemptsRef.current = 0;
 
         console.log("🧹 연결 정리 완료");
@@ -746,6 +802,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
             aiSpeakingStartRef.current = null;
         }
     }, [aiSpeaking]);
+
+    useEffect(() => {
+        transcriptsRef.current = transcripts;
+    }, [transcripts]);
 
     return {
         connected,
