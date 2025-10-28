@@ -275,7 +275,16 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const initWebRtc = async (ephemeralKey, sessionId) => {
 
         // 1. peerConnection 설정
-        pcRef.current = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        pcRef.current = new RTCPeerConnection({ iceServers: [
+            // stun 서버
+            { urls: "stun:stun.l.google.com:19302" },
+            // trun 서버
+            {
+                urls: "turn:openrelay.metered.ca:80",
+                username: "openrelayproject",
+                credential: "openrelayproject"
+            }
+            ] });
 
         // 2. DataChannel 설정
         dataChannelRef.current = pcRef.current.createDataChannel('oai-events');
@@ -303,9 +312,18 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 }
 
                 if (data.type === "output_audio_buffer.stopped") {
-                    console.log("AI 발화 종료");
-                    setAiSpeaking(false);
-                    setVadStatus('idle');
+
+                    if (aiSpeakingTimeoutRef.current) {
+                        clearTimeout(aiSpeakingTimeoutRef.current);
+                        aiSpeakingTimeoutRef.current = null;
+                    }
+
+                    aiSpeakingTimeoutRef.current = setTimeout(() => {
+                        console.log("AI 발화 종료");
+                        setAiSpeaking(false);
+                        setVadStatus('idle');
+                        aiSpeakingTimeoutRef.current = null;
+                    }, 1000);
 
                 }
 
@@ -700,6 +718,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
      * 연결 정리
      */
     const cleanupConnection = useCallback(async () => {
+
+        // AI 발화 타이머 정리
+        if (aiSpeakingTimeoutRef.current) {
+            clearTimeout(aiSpeakingTimeoutRef.current);
+            aiSpeakingTimeoutRef.current = null;
+        }
 
         // VAD 정리
         if (vadInstanceRef.current) {
