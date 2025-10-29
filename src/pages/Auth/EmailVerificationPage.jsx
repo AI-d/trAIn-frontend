@@ -7,21 +7,19 @@ import VerificationCodeInput from '@/components/Auth/VerificationCodeInput';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import {getErrorMessage, validateVerificationCode} from '@/utils/validation';
 
-/**
- * 이메일 인증 페이지
- * 회원가입 후 6자리 인증 코드 입력
- */
 const EmailVerificationPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // SignupPage에서 전달받은 데이터
-    const {email, emailVerificationToken} = location.state || {};
+    const {email, emailVerificationToken: initialToken} = location.state || {};
 
     const [verificationCode, setVerificationCode] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [resendCooldown, setResendCooldown] = useState(0);
+
+    // 토큰을 state로 관리 (재전송 시 업데이트)
+    const [emailVerificationToken, setEmailVerificationToken] = useState(initialToken);
 
     // 이메일 또는 토큰 없으면 회원가입 페이지로 리디렉트
     useEffect(() => {
@@ -44,18 +42,13 @@ const EmailVerificationPage = () => {
     const handleCodeChange = (code) => {
         setVerificationCode(code);
         setError('');
-
-        // 6자리 입력 완료 시 자동 제출
-        if (code.length === 6) {
-            handleSubmit(code);
-        }
     };
 
     // 인증 제출
-    const handleSubmit = async (code = verificationCode) => {
+    const handleSubmit = async () => {
         // 검증
-        if (!validateVerificationCode(code)) {
-            setError(getErrorMessage.verificationCode(code));
+        if (!validateVerificationCode(verificationCode)) {
+            setError(getErrorMessage.verificationCode(verificationCode));
             return;
         }
 
@@ -65,8 +58,8 @@ const EmailVerificationPage = () => {
 
             const payload = {
                 email,
-                verificationCode: code,
-                emailVerificationToken,
+                verificationCode,
+                emailVerificationToken, // state에서 가져온 토큰 사용
             };
 
             await authService.verifyEmail(payload);
@@ -84,7 +77,6 @@ const EmailVerificationPage = () => {
             const errorData = err.response?.data;
             const errorCode = errorData?.error || errorData?.errorCode;
 
-            // 에러 코드별 처리
             if (errorCode === 'VERIFY_003') {
                 setError('인증 코드가 올바르지 않습니다.');
             } else if (errorCode === 'VERIFY_002') {
@@ -96,7 +88,6 @@ const EmailVerificationPage = () => {
                 setError(errorData?.detail || errorData?.message || '이메일 인증에 실패했습니다.');
             }
 
-            // 코드 초기화
             setVerificationCode('');
         } finally {
             setIsSubmitting(false);
@@ -109,13 +100,17 @@ const EmailVerificationPage = () => {
 
         try {
             setError('');
-            await authService.resendVerificationEmail(email);
 
-            // 성공 메시지 (3초간 표시)
-            setError('');
-            alert('인증 코드가 재전송되었습니다.');
+            // 새 토큰 받기
+            const response = await authService.resendVerificationEmail(email);
 
-            // 쿨다운 60초
+            // 새 토큰으로 업데이트
+            if (response.emailVerificationToken) {
+                setEmailVerificationToken(response.emailVerificationToken);
+                console.log('새 인증 토큰 받음:', response.emailVerificationToken.substring(0, 20) + '...');
+            }
+
+            alert('인증 코드가 재발송되었습니다.');
             setResendCooldown(60);
 
         } catch (err) {
@@ -168,10 +163,10 @@ const EmailVerificationPage = () => {
                     </button>
                 </div>
 
-                {/* 인증 버튼 (수동 제출용) */}
+                {/* 인증 버튼 */}
                 <button
                     className="email-verification-page__submit-button"
-                    onClick={() => handleSubmit()}
+                    onClick={handleSubmit}
                     disabled={verificationCode.length !== 6 || isSubmitting}
                 >
                     {isSubmitting ? '인증 중...' : '인증하기'}

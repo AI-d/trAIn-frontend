@@ -10,50 +10,50 @@ import SignupPage from '@/pages/Auth/SignupPage';
 import EmailVerificationPage from '@/pages/Auth/EmailVerificationPage';
 import LoginPage from '@/pages/Auth/LoginPage';
 import CallbackPage from '@/pages/Auth/CallbackPage';
-import SocialSignupCompletePage from '@/pages/Auth/SocialSignupCompletePage';
+import SocialSignupPage from '@/pages/Auth/SocialSignupPage.jsx';
 import MyProfilePage from '@/pages/User/MyProfilePage';
 
 // 라우트 메타 정의
 export const routes = [
     {
         path: '/',
-        element: <WelcomePage />,
+        element: <WelcomePage/>,
         authRequired: false,
         title: 'Welcome - Dialogym',
     },
     {
         path: '/signup',
-        element: <SignupPage />,
+        element: <SignupPage/>,
         authRequired: false,
         title: '회원가입 - Dialogym',
     },
     {
         path: '/verify-email',
-        element: <EmailVerificationPage />,
+        element: <EmailVerificationPage/>,
         authRequired: false,
         title: '이메일 인증 - Dialogym',
     },
     {
         path: '/login',
-        element: <LoginPage />,
+        element: <LoginPage/>,
         authRequired: false,
         title: '로그인 - Dialogym',
     },
     {
         path: '/callback',
-        element: <CallbackPage />,
+        element: <CallbackPage/>,
         authRequired: false,
         title: '소셜 로그인 처리중 - Dialogym',
     },
     {
         path: '/social-signup',
-        element: <SocialSignupCompletePage />,
+        element: <SocialSignupPage/>,
         authRequired: false,
         title: '소셜 회원가입 완료 - Dialogym',
     },
     {
         path: '/profile',
-        element: <MyProfilePage />,
+        element: <MyProfilePage/>,
         authRequired: true,
         title: '내 프로필 - Dialogym',
     },

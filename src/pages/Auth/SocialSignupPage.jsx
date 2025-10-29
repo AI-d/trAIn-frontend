@@ -1,5 +1,5 @@
-// src/pages/Auth/SocialSignupCompletePage.jsx
-// import styles from './SocialSignupCompletePage.module.scss';
+// src/pages/Auth/SocialSignupPage.jsx
+// import styles from './SocialSignupPage.module.scss';
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {useAuthStore} from '@/stores/authStore';
@@ -8,30 +8,20 @@ import SocialSignupStep2 from '@/components/Auth/signup/SocialSignupStep2';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import ErrorMessage from '@/components/common/ErrorMessage';
 
-/**
- * 소셜 신규 회원 가입 완료 페이지
- *
- * Step 1: 약관 동의
- * Step 2: 추가 정보 입력 (이름, 생년월일, 직업)
- */
-const SocialSignupCompletePage = () => {
+const SocialSignupPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const completeSocialSignup = useAuthStore((s) => s.completeSocialSignup);
 
-    const [currentStep, setCurrentStep] = useState(1); // 1 or 2
+    const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
-    // socialTempToken
+    // ✅ socialTempToken (백엔드가 token 파라미터로 보냄)
     const [socialTempToken, setSocialTempToken] = useState('');
 
-    // Step 1: 약관 동의 데이터
     const [consents, setConsents] = useState([]);
-
-    // Step 2: 추가 정보 데이터
     const [formData, setFormData] = useState({
-        name: '',
         birthDate: '',
         jobType: '',
         jobDetail: '',
@@ -52,12 +42,10 @@ const SocialSignupCompletePage = () => {
         setSocialTempToken(token);
     }, [searchParams, navigate]);
 
-    // Step 1 → Step 2
     const handleStep1Next = () => {
         setCurrentStep(2);
     };
 
-    // Step 2 → Step 1
     const handleStep2Prev = () => {
         setCurrentStep(1);
     };
@@ -70,8 +58,7 @@ const SocialSignupCompletePage = () => {
 
             // payload 구성
             const payload = {
-                socialTempToken,
-                name: formData.name,
+                socialSignupPendingToken: socialTempToken, // ← 이 필드명이 중요!
                 birthDate: formData.birthDate,
                 jobType: formData.jobType,
                 jobDetail: formData.jobType === 'OTHER' ? formData.jobDetail : null,
@@ -82,11 +69,13 @@ const SocialSignupCompletePage = () => {
                 })),
             };
 
+            console.log('소셜 회원가입 payload:', payload); // ← 디버깅용
+
             // 소셜 회원가입 완료 API 호출
             await completeSocialSignup(payload);
 
             // 성공 → 홈으로 이동
-            navigate('/', {replace: true});
+            navigate('/home', {replace: true});
 
         } catch (err) {
             console.error('소셜 회원가입 완료 실패:', err);
@@ -103,24 +92,24 @@ const SocialSignupCompletePage = () => {
     }
 
     return (
-        <div className="social-signup-complete-page">
-            <div className="social-signup-complete-page__container">
+        <div className="social-signup-page">
+            <div className="social-signup-page__container">
                 {/* 진행 단계 표시 */}
-                <div className="social-signup-complete-page__progress">
-                    <div className={`social-signup-complete-page__step ${currentStep === 1 ? 'active' : ''}`}>
-                        <span className="social-signup-complete-page__step-number">1</span>
-                        <span className="social-signup-complete-page__step-label">약관 동의</span>
+                <div className="social-signup-page__progress">
+                    <div className={`social-signup-page__step ${currentStep === 1 ? 'active' : ''}`}>
+                        <span className="social-signup-page__step-number">1</span>
+                        <span className="social-signup-page__step-label">약관 동의</span>
                     </div>
-                    <div className="social-signup-complete-page__step-divider"/>
-                    <div className={`social-signup-complete-page__step ${currentStep === 2 ? 'active' : ''}`}>
-                        <span className="social-signup-complete-page__step-number">2</span>
-                        <span className="social-signup-complete-page__step-label">정보 입력</span>
+                    <div className="social-signup-page__step-divider"/>
+                    <div className={`social-signup-page__step ${currentStep === 2 ? 'active' : ''}`}>
+                        <span className="social-signup-page__step-number">2</span>
+                        <span className="social-signup-page__step-label">정보 입력</span>
                     </div>
                 </div>
 
                 {/* 에러 메시지 */}
                 {error && (
-                    <div className="social-signup-complete-page__error">
+                    <div className="social-signup-page__error">
                         <ErrorMessage message={error} type="error"/>
                     </div>
                 )}
@@ -152,4 +141,4 @@ const SocialSignupCompletePage = () => {
     );
 };
 
-export default SocialSignupCompletePage;
+export default SocialSignupPage;

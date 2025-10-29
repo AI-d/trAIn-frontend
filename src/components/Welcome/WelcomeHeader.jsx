@@ -2,24 +2,32 @@
 // import styles from './WelcomeHeader.module.scss';
 import React from 'react';
 
-/**
- * Welcome 페이지 헤더 컴포넌트
- * 회원가입 버튼만 표시
- *
- * @param {function} onSignupClick - 회원가입 버튼 클릭 핸들러
- */
-const WelcomeHeader = ({ onSignupClick }) => {
+const WelcomeHeader = ({onSignupClick, isAuthenticated, onLogout}) => {
     return (
         <header className="welcome-header">
             <div className="welcome-header__container">
-                {/* 회원가입 버튼 */}
-                <button
-                    className="welcome-header__signup-btn"
-                    onClick={onSignupClick}
-                    type="button"
-                >
-                    회원가입
-                </button>
+                <div className="welcome-header__logo">
+                    <h1>Dialogym</h1>
+                </div>
+
+                <nav className="welcome-header__nav">
+                    {/* 로그인 상태에 따라 다른 버튼 표시 */}
+                    {!isAuthenticated ? (
+                        <button
+                            className="welcome-header__signup-button"
+                            onClick={onSignupClick}
+                        >
+                            회원가입
+                        </button>
+                    ) : (
+                        <button
+                            className="welcome-header__logout-button"
+                            onClick={onLogout}
+                        >
+                            로그아웃
+                        </button>
+                    )}
+                </nav>
             </div>
         </header>
     );

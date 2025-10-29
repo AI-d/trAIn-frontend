@@ -3,12 +3,9 @@
 import {create} from 'zustand';
 import {devtools} from 'zustand/middleware';
 import {immer} from 'zustand/middleware/immer';
-
-import apiClient from '@/services/apiClient';
 import {setAccessTokenGetter} from '@/services/tokenManager';
 import * as authService from '@/services/authService';
 import * as userService from '@/services/userService';
-import {unwrap} from '@/services/normalize';
 
 const initialState = {
     user: null,
@@ -24,22 +21,37 @@ export const useAuthStore = create(
             ...initialState,
 
             initializeAuth: async () => {
-                if (get().isInitialized) return;
-
-                set({status: 'loading'});
                 try {
-                    const {data} = await apiClient.post('/users/refresh');
-                    const normalized = unwrap(data);
-                    const newAccessToken = normalized?.data?.accessToken || normalized?.data;
+                    const refreshToken = localStorage.getItem('refreshToken');
 
-                    if (!newAccessToken) throw new Error('No access token in refresh response.');
+                    if (!refreshToken) {
+                        set({status: 'unauthenticated'});
+                        return;
+                    }
 
-                    set({accessToken: newAccessToken});
-                    await get().fetchUser();
-                } catch {
-                    get().clearAuth();
-                } finally {
-                    set({isInitialized: true});
+                    const newTokens = await authService.refreshToken(refreshToken);
+
+                    localStorage.setItem('accessToken', newTokens.accessToken);
+                    localStorage.setItem('refreshToken', newTokens.refreshToken);
+
+                    const userProfile = await userService.getMyProfile();
+
+                    set({
+                        status: 'authenticated',
+                        user: userProfile,
+                    });
+
+                } catch (error) {
+                    console.error('인증 초기화 실패:', error);
+
+                    // 401 에러는 정상 (로그아웃 상태)
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+
+                    set({
+                        status: 'unauthenticated',
+                        user: null,
+                    });
                 }
             },
 

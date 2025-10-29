@@ -2,22 +2,22 @@
 // import styles from './VerificationCodeInput.module.scss';
 import React, {useEffect, useRef, useState} from 'react';
 
-/**
- * 6자리 인증 코드 입력 컴포넌트
- *
- * @param {string} value - 입력된 코드 (6자리 문자열)
- * @param {function} onChange - 코드 변경 핸들러
- * @param {boolean} disabled - 비활성화 여부
- * @param {string} error - 에러 메시지
- */
 const VerificationCodeInput = ({value, onChange, disabled, error}) => {
-    const [codes, setCodes] = useState(value ? value.split('') : ['', '', '', '', '', '']);
+    // value가 없으면 빈 배열 6개로 초기화
+    const [codes, setCodes] = useState(['', '', '', '', '', '']);
     const inputRefs = useRef([]);
 
     // value prop 변경 시 codes 업데이트
     useEffect(() => {
-        if (value) {
-            setCodes(value.split(''));
+        if (value && value.length <= 6) {
+            const newCodes = value.split('');
+            // 6자리로 패딩
+            while (newCodes.length < 6) {
+                newCodes.push('');
+            }
+            setCodes(newCodes);
+        } else if (!value) {
+            setCodes(['', '', '', '', '', '']);
         }
     }, [value]);
 
@@ -63,14 +63,11 @@ const VerificationCodeInput = ({value, onChange, disabled, error}) => {
     const handlePaste = (e) => {
         e.preventDefault();
         const pastedData = e.clipboardData.getData('text');
-        const pastedCodes = pastedData.slice(0, 6).split('');
+        const pastedCodes = pastedData.replace(/\D/g, '').slice(0, 6).split('');
 
-        // 숫자만 필터링
-        const filteredCodes = pastedCodes.filter(code => /^\d$/.test(code));
-
-        if (filteredCodes.length > 0) {
-            const newCodes = [...codes];
-            filteredCodes.forEach((code, idx) => {
+        if (pastedCodes.length > 0) {
+            const newCodes = ['', '', '', '', '', ''];
+            pastedCodes.forEach((code, idx) => {
                 if (idx < 6) {
                     newCodes[idx] = code;
                 }
@@ -79,8 +76,10 @@ const VerificationCodeInput = ({value, onChange, disabled, error}) => {
             onChange(newCodes.join(''));
 
             // 마지막 입력된 칸으로 포커스 이동
-            const lastIndex = Math.min(filteredCodes.length, 5);
-            inputRefs.current[lastIndex]?.focus();
+            const lastIndex = Math.min(pastedCodes.length - 1, 5);
+            setTimeout(() => {
+                inputRefs.current[lastIndex]?.focus();
+            }, 0);
         }
     };
 

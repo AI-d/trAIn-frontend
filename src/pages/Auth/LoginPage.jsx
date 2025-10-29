@@ -26,7 +26,7 @@ const LoginPage = () => {
             await login(credentials);
 
             // 성공 → 홈으로 이동
-            navigate('/', {replace: true});
+            navigate('/home', {replace: true});
 
         } catch (err) {
             console.error('로그인 실패:', err);

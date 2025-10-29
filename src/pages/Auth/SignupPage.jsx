@@ -56,6 +56,7 @@ const SignupPage = () => {
             const payload = {
                 email: formData.email,
                 password: formData.password,
+                passwordConfirm: formData.passwordConfirm, // ← 필수!
                 name: formData.name,
                 birthDate: formData.birthDate,
                 jobType: formData.jobType,

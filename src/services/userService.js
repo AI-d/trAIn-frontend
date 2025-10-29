@@ -1,7 +1,7 @@
 // src/services/userService.js
 
 import apiClient from '@/services/apiClient';
-import {unwrap} from '@/services/normalize';
+import {unwrap} from '@/utils/normalize';
 
 /**
  * @fileoverview 사용자 프로필 API

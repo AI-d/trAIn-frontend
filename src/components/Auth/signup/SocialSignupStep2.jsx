@@ -1,15 +1,15 @@
 // src/components/Auth/signup/SocialSignupStep2.jsx
 // import styles from './SocialSignupStep2.module.scss';
 import React, {useState} from 'react';
-import TextInput from '@/components/common/inputs/TextInput';
 import DateInput from '@/components/common/inputs/DateInput';
 import Select from '@/components/common/inputs/Select';
+import TextInput from '@/components/common/inputs/TextInput';
 import {getErrorMessage, JOB_TYPE_OPTIONS,} from '@/utils/validation';
 
 /**
  * 소셜 회원가입 Step 2 - 추가 정보 입력
  *
- * @param {object} formData - 폼 데이터 { name, birthDate, jobType, jobDetail }
+ * @param {object} formData - 폼 데이터 { birthDate, jobType, jobDetail }
  * @param {function} onFormChange - 폼 데이터 변경 핸들러
  * @param {function} onPrev - 이전 단계로 이동 핸들러
  * @param {function} onSubmit - 제출 핸들러
@@ -46,9 +46,6 @@ const SocialSignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitti
         let error = '';
 
         switch (name) {
-            case 'name':
-                error = getErrorMessage.name(value);
-                break;
             case 'birthDate':
                 error = getErrorMessage.birthDate(value);
                 break;
@@ -73,7 +70,6 @@ const SocialSignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitti
     const validateForm = () => {
         const newErrors = {};
 
-        newErrors.name = getErrorMessage.name(formData.name);
         newErrors.birthDate = getErrorMessage.birthDate(formData.birthDate);
         newErrors.jobType = getErrorMessage.jobType(formData.jobType);
 
@@ -94,7 +90,6 @@ const SocialSignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitti
 
         // 모든 필드를 터치 상태로 변경
         setTouched({
-            name: true,
             birthDate: true,
             jobType: true,
             jobDetail: true,
@@ -118,18 +113,6 @@ const SocialSignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitti
 
             {/* 폼 */}
             <form className="social-signup-step2__form" onSubmit={handleSubmit}>
-                {/* 이름 */}
-                <TextInput
-                    name="name"
-                    label="이름"
-                    value={formData.name}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('name')}
-                    placeholder="홍길동"
-                    required
-                    error={touched.name ? errors.name : ''}
-                />
-
                 {/* 생년월일 */}
                 <DateInput
                     name="birthDate"

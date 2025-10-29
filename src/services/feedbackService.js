@@ -1,7 +1,7 @@
 // src/services/feedbackService.js
 
 import apiClient from '@/services/apiClient';
-import {unwrap} from '@/services/normalize';
+import {unwrap} from '@/utils/normalize';
 
 /**
  * @fileoverview 피드백 관련 API 모듈

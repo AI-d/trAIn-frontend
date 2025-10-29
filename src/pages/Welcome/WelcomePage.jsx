@@ -1,21 +1,21 @@
 // src/pages/Welcome/WelcomePage.jsx
 // import styles from './WelcomePage.module.scss';
-
 import React from 'react';
 import {useNavigate} from 'react-router-dom';
+import {useAuthStore} from '@/stores/authStore';
+import {API_BASE_URL} from '@/services/apiClient';
 import WelcomeHeader from '@/components/Welcome/WelcomeHeader';
 import WelcomeHero from '@/components/Welcome/WelcomeHero';
 import EmailLoginButton from '@/components/Auth/EmailLoginButton';
 import SocialButtonGroup from '@/components/Auth/SocialButtonGroup';
 import WelcomeFooter from '@/components/Welcome/WelcomeFooter';
-import {API_BASE_URL} from "@/services/apiClient.js";
 
-/**
- * 웰컴 페이지 (첫 진입 페이지)
- * 로그인/회원가입 선택 화면
- */
 const WelcomePage = () => {
     const navigate = useNavigate();
+
+    // 로그인 상태 확인
+    const isAuthenticated = useAuthStore((s) => s.status === 'authenticated');
+    const logout = useAuthStore((s) => s.logout);
 
     // 회원가입 버튼 클릭
     const handleSignupClick = () => {
@@ -27,38 +27,61 @@ const WelcomePage = () => {
         navigate('/login');
     };
 
-    // 소셜 로그인 (provider: 'google' | 'kakao' | 'naver')
+    // 소셜 로그인
     const handleSocialLogin = (provider) => {
-        // OAuth2 엔드포인트로 리디렉트
         window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
+    };
+
+    // 로그아웃
+    const handleLogout = async () => {
+        await logout();
+        // 페이지 새로고침으로 UI 갱신
+        window.location.reload();
     };
 
     return (
         <div className="welcome-page">
             {/* 헤더 */}
-            <WelcomeHeader onSignupClick={handleSignupClick}/>
+            <WelcomeHeader
+                onSignupClick={handleSignupClick}
+                // 로그인 상태면 로그아웃 버튼
+                isAuthenticated={isAuthenticated}
+                onLogout={handleLogout}
+            />
 
             {/* 메인 컨텐츠 */}
             <main className="welcome-page__main">
-                {/* 히어로 섹션 */}
                 <WelcomeHero/>
 
-                {/* 로그인 액션 */}
-                <div className="welcome-page__actions">
-                    {/* 이메일 로그인 버튼 */}
-                    <EmailLoginButton onClick={handleEmailLogin}/>
+                {/* 로그인 안 되어있을 때만 로그인 액션 표시 */}
+                {!isAuthenticated && (
+                    <div className="welcome-page__actions">
+                        <EmailLoginButton onClick={handleEmailLogin}/>
 
-                    {/* 구분선 */}
-                    <div className="welcome-page__divider">
-                        <span className="welcome-page__divider-text">또는</span>
+                        <div className="welcome-page__divider">
+                            <span className="welcome-page__divider-text">또는</span>
+                        </div>
+
+                        <SocialButtonGroup onSocialLogin={handleSocialLogin}/>
                     </div>
+                )}
 
-                    {/* 소셜 로그인 버튼 그룹 */}
-                    <SocialButtonGroup onSocialLogin={handleSocialLogin}/>
-                </div>
+                {/* 로그인 되어있으면 다른 UI 표시 */}
+                {isAuthenticated && (
+                    <div className="welcome-page__authenticated">
+                        <p className="welcome-page__welcome-message">
+                            환영합니다! 대화 훈련을 시작해보세요.
+                        </p>
+                        <button
+                            className="welcome-page__start-button"
+                            onClick={() => navigate('/training')} // 훈련 페이지로 이동
+                        >
+                            훈련 시작하기
+                        </button>
+                    </div>
+                )}
             </main>
 
-            {/* 푸터 */}
             <WelcomeFooter/>
         </div>
     );

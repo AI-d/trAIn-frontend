@@ -233,7 +233,7 @@ const SignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitting}) =
                         className="signup-step2__submit-button"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? '가입 중...' : '회원가입'}
+                        {isSubmitting ? '가입 중...' : '이메일 인증'}
                     </button>
                 </div>
             </form>
