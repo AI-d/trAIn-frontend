@@ -1,118 +1,146 @@
 // src/pages/Auth/SignupPage.jsx
-
-import {useState} from 'react';
+// import styles from './SignupPage.module.scss';
+import React, {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {SignupStep1} from '@/components/Auth/SignupStep1';
-import {SignupStep2} from '@/components/Auth/SignupStep2';
-import {SignupNavigation} from '@/components/Auth/SignupNavigation';
 import * as authService from '@/services/authService';
+import SignupNavigation from '@/components/Auth/SignupNavigation';
+import SignupStep1 from '@/components/Auth/signup/SignupStep1';
+import SignupStep2 from '@/components/Auth/signup/SignupStep2';
+import LoadingOverlay from '@/components/common/LoadingOverlay';
+import ErrorMessage from '@/components/common/ErrorMessage';
 
-export function SignupPage() {
+/**
+ * 로컬 회원가입 페이지
+ *
+ * Step 1: 약관 동의
+ * Step 2: 정보 입력
+ */
+const SignupPage = () => {
     const navigate = useNavigate();
-    const [currentStep, setCurrentStep] = useState(1);
-    const [consents, setConsents] = useState([]);
-    const [loading, setLoading] = useState(false);
+
+    const [currentStep, setCurrentStep] = useState(1); // 1 or 2
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [emailVerificationToken, setEmailVerificationToken] = useState('');
 
-    const handleSignInClick = () => {
-        navigate('/login');
+    // Step 1: 약관 동의 데이터
+    const [consents, setConsents] = useState([]);
+
+    // Step 2: 회원 정보 데이터
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        passwordConfirm: '',
+        name: '',
+        birthDate: '',
+        jobType: '',
+        jobDetail: '',
+    });
+
+    // Step 1 → Step 2
+    const handleStep1Next = () => {
+        setCurrentStep(2);
     };
 
-    const handleStep1Change = (newConsents) => {
-        setConsents(newConsents);
+    // Step 2 → Step 1
+    const handleStep2Prev = () => {
+        setCurrentStep(1);
     };
 
-    const canGoToStep2 = () => {
-        return consents.filter(c => c.required).every(c => c.agreed);
-    };
-
-    const handleNext = () => {
-        if (currentStep === 1 && canGoToStep2()) {
-            setCurrentStep(2);
-        }
-    };
-
-    const handlePrevious = () => {
-        if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
-        }
-    };
-
-    const handleStep2Submit = async (formData) => {
-        setLoading(true);
-        setError('');
-
+    // 최종 제출
+    const handleSubmit = async () => {
         try {
+            setIsSubmitting(true);
+            setError('');
+
+            // payload 구성
             const payload = {
-                name: formData.name,
                 email: formData.email,
                 password: formData.password,
-                passwordConfirm: formData.passwordConfirm,
+                name: formData.name,
                 birthDate: formData.birthDate,
                 jobType: formData.jobType,
                 jobDetail: formData.jobType === 'OTHER' ? formData.jobDetail : null,
-                consents: consents
+                consents: consents.map(consent => ({
+                    termsId: consent.termsId,
+                    version: consent.version,
+                    agreed: consent.agreed,
+                })),
             };
 
+            // 회원가입 API 호출
             const response = await authService.signup(payload);
 
-            if (response.emailVerificationToken) {
-                setEmailVerificationToken(response.emailVerificationToken);
+            // 성공 → 이메일 인증 페이지로 이동
+            navigate('/email-verification', {
+                replace: true,
+                state: {
+                    email: formData.email,
+                    emailVerificationToken: response.emailVerificationToken,
+                },
+            });
 
-                sessionStorage.setItem('emailVerificationToken', response.emailVerificationToken);
-                sessionStorage.setItem('signupEmail', formData.email);
-
-                navigate('/verify-email');
-            }
         } catch (err) {
-            setError(err.response?.data?.message || '회원가입 중 오류가 발생했습니다.');
+            console.error('회원가입 실패:', err);
+            const errorData = err.response?.data;
+
+            // 이메일 중복 에러 (USER_002)
+            if (errorData?.error === 'USER_002' || errorData?.errorCode === 'USER_002') {
+                setError('이미 사용 중인 이메일입니다.');
+                setCurrentStep(2); // Step 2로 이동하여 이메일 수정 가능하게
+            } else {
+                setError(errorData?.detail || errorData?.message || '회원가입에 실패했습니다.');
+            }
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
     return (
         <div className="signup-page">
-            <header className="signup-page__header">
-                <div className="signup-page__logo">
-                    <span className="signup-page__logo-text">Dialogym</span>
+            <div className="signup-page__container">
+                {/* 타이틀 */}
+                <div className="signup-page__header">
+                    <h1 className="signup-page__title">회원가입</h1>
+                    <p className="signup-page__subtitle">
+                        Dialogym과 함께 대화 실력을 향상시켜보세요.
+                    </p>
                 </div>
-                <button
-                    className="signup-page__signin-btn"
-                    onClick={handleSignInClick}
-                    type="button"
-                >
-                    로그인
-                </button>
-            </header>
 
-            <main className="signup-page__main">
-                <div className="signup-page__container">
-                    <SignupNavigation
-                        currentStep={currentStep}
-                        onPrevious={handlePrevious}
-                        onNext={handleNext}
-                        canGoNext={canGoToStep2()}
-                        loading={loading}
+                {/* 단계 네비게이션 */}
+                <SignupNavigation currentStep={currentStep}/>
+
+                {/* 에러 메시지 */}
+                {error && (
+                    <div className="signup-page__error">
+                        <ErrorMessage message={error} type="error"/>
+                    </div>
+                )}
+
+                {/* Step 1: 약관 동의 */}
+                {currentStep === 1 && (
+                    <SignupStep1
+                        consents={consents}
+                        onConsentsChange={setConsents}
+                        onNext={handleStep1Next}
                     />
+                )}
 
-                    {currentStep === 1 && (
-                        <SignupStep1
-                            value={consents}
-                            onChange={handleStep1Change}
-                        />
-                    )}
+                {/* Step 2: 정보 입력 */}
+                {currentStep === 2 && (
+                    <SignupStep2
+                        formData={formData}
+                        onFormChange={setFormData}
+                        onPrev={handleStep2Prev}
+                        onSubmit={handleSubmit}
+                        isSubmitting={isSubmitting}
+                    />
+                )}
+            </div>
 
-                    {currentStep === 2 && (
-                        <SignupStep2
-                            onSubmit={handleStep2Submit}
-                            loading={loading}
-                            error={error}
-                        />
-                    )}
-                </div>
-            </main>
+            {/* 전체 화면 로딩 */}
+            {isSubmitting && <LoadingOverlay fullscreen message="회원가입을 처리하는 중..."/>}
         </div>
     );
-}
+};
+
+export default SignupPage;
