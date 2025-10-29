@@ -1,0 +1,162 @@
+/* src/pages/Welcome/WelcomePage.module.scss */
+
+/* --- 기존 로컬 변수(유지). 후속 작업에서 _variables.scss로 이동 권장 --- */
+$soft-white: #F8F9FB;
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$deep-navy: #2C3E5D;
+$primary-blue-light: #6B8EE8;
+$primary-blue: #5B7FDB;
+$pale-blue: #F0F4FE;
+$gradient-primary: linear-gradient(135deg, $primary-blue-light 0%, $primary-blue 100%);
+$radius-md: 12px;
+$shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
+
+/* --- 접근성: 공용 포커스 링 (필요한 요소에만 선택 적용) --- */
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+/* --- 모션 민감 사용자 지원 --- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- iOS 세이프 영역 유틸 (필요 시 자식 요소에서 @extend 가능) --- */
+.safe {
+  padding-left: max(env(safe-area-inset-left), 16px);
+  padding-right: max(env(safe-area-inset-right), 16px);
+}
+
+.welcome-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: $soft-white;
+
+  &__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 기존 padding 유지 + 세이프 영역 선택 적용 */
+    padding: 24px 16px;
+    @extend .safe;
+  }
+
+  &__actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  &__divider {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    color: $warm-gray;
+    margin: 8px 0; /* 시각적 여백 보강 */
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1 1 100%;
+      border-bottom: 1px solid $border-gray;
+    }
+  }
+
+  &__divider-text {
+    font-size: 12px;
+    color: $warm-gray;
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
+
+  &__authenticated {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 48px;
+    width: 100%;
+  }
+
+  &__welcome-message {
+    font-size: 16px;
+    font-weight: 500;
+    color: $deep-navy;
+    margin: 0 0 24px 0;
+  }
+
+  &__start-button {
+    width: 100%;
+    background: $gradient-primary;
+    color: #fff;
+    border: none;
+    border-radius: $radius-md;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    /* rgba(SCSS 색상) 사용 유지: 전역 변수 전환 전까지 안전 */
+    box-shadow: 0 4px 12px rgba($primary-blue, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      /* scale 유지(기존 UX 존중). 필요 시 translateY(-1px) 권장 */
+      transform: scale(1.03);
+      box-shadow: 0 6px 16px rgba($primary-blue, 0.3);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+
+    &:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+  }
+}
+
+/* --- (옵션) 다크 모드: 배경/텍스트 대비 향상 --- */
+@media (prefers-color-scheme: dark) {
+  .welcome-page {
+    background-color: #12161F;
+
+    &__welcome-message {
+      color: #E5E7EB;
+    }
+
+    &__divider {
+      color: #9CA3AF;
+
+      &::before,
+      &::after {
+        border-bottom-color: #4B5563;
+      }
+    }
+  }
+}
+
+/* --- (옵션) 작은 반응형 확장 --- */
+@media (min-width: 480px) {
+  .welcome-page {
+    max-width: 540px;
+  }
+}

@@ -1,5 +1,5 @@
 // src/components/Auth/SocialButtonGroup.jsx
-// import styles from './SocialButtonGroup.module.scss';
+import styles from './SocialButtonGroup.module.scss';
 import React from 'react';
 import SocialButton from './SocialButton';
 
@@ -9,7 +9,7 @@ import SocialButton from './SocialButton';
  *
  * @param {function} onSocialLogin - 소셜 로그인 핸들러 (provider를 인자로 받음)
  */
-const SocialButtonGroup = ({ onSocialLogin }) => {
+const SocialButtonGroup = ({onSocialLogin}) => {
     const handleSocialLogin = (provider) => {
         // 소셜 로그인 처리
         if (onSocialLogin) {
@@ -21,10 +21,10 @@ const SocialButtonGroup = ({ onSocialLogin }) => {
     };
 
     return (
-        <div className="social-button-group">
-            <SocialButton provider="google" onClick={handleSocialLogin} />
-            <SocialButton provider="kakao" onClick={handleSocialLogin} />
-            <SocialButton provider="naver" onClick={handleSocialLogin} />
+        <div className={`${styles['social-button-group']} social-button-group`}>
+            <SocialButton provider="google" onClick={handleSocialLogin}/>
+            <SocialButton provider="kakao" onClick={handleSocialLogin}/>
+            <SocialButton provider="naver" onClick={handleSocialLogin}/>
         </div>
     );
 };

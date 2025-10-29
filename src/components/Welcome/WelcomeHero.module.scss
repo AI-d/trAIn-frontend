@@ -1,0 +1,75 @@
+/* src/components/Welcome/WelcomeHero.module.scss */
+
+/* 로컬 변수 */
+$light-blue: #E8EFFC;
+$border-gray: #D1D5DB;
+$primary-blue: #5B7FDB;
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+
+/* 모션 민감 사용자 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.welcome-hero {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 24px 16px 8px;
+
+  &__logo {
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    background: $light-blue;
+    border: 1px solid $border-gray;
+    margin-bottom: 12px;
+  }
+
+  &__logo-icon {
+    font-size: 28px;
+    font-weight: 900;
+    color: $primary-blue;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 900;
+    color: $deep-navy;
+  }
+
+  &__tagline {
+    margin: 8px 0 0;
+    font-size: 14px;
+    color: $warm-gray;
+  }
+}
+
+/* 다크 모드 (옵션) */
+@media (prefers-color-scheme: dark) {
+  .welcome-hero {
+    &__logo {
+      background: #111827;
+      border-color: #374151;
+    }
+
+    &__logo-icon {
+      color: $primary-blue;
+    }
+
+    &__title {
+      color: #E5E7EB;
+    }
+
+    &__tagline {
+      color: #9CA3AF;
+    }
+  }
+}

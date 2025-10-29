@@ -1,5 +1,5 @@
 // src/components/Welcome/WelcomeFooter.jsx
-// import styles from './WelcomeFooter.module.scss';
+import styles from './WelcomeFooter.module.scss';
 import React from 'react';
 
 /**
@@ -8,8 +8,8 @@ import React from 'react';
  */
 const WelcomeFooter = () => {
     return (
-        <footer className="welcome-footer">
-            <p className="welcome-footer__copyright">
+        <footer className={`${styles['welcome-footer']} welcome-footer`}>
+            <p className={`${styles['welcome-footer__copyright']} welcome-footer__copyright`}>
                 © 2025 Aid. All rights reserved.
             </p>
         </footer>

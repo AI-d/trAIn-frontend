@@ -1,0 +1,46 @@
+/* src/components/Auth/SocialButtonGroup.module.scss */
+
+/* 로컬 변수 */
+$gap: 12px;
+$max-width: 420px;
+
+/* 모션 민감 사용자 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* iOS safe-area 유틸 */
+.safe {
+  padding-left: max(env(safe-area-inset-left), 16px);
+  padding-right: max(env(safe-area-inset-right), 16px);
+}
+
+.social-button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: $max-width;
+  gap: $gap;
+  @extend .safe;
+
+  /* 소셜 버튼 간격 및 정렬 보정 */
+  > * {
+    width: 100%;
+  }
+
+  /* 버튼 그룹 하단 마진 (다른 요소와 간격 확보) */
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+/* 다크 모드 (옵션) */
+@media (prefers-color-scheme: dark) {
+  .social-button-group {
+    background: transparent; // 필요 시 테마 영역 통일용
+  }
+}

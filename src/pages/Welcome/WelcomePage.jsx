@@ -1,5 +1,5 @@
 // src/pages/Welcome/WelcomePage.jsx
-// import styles from './WelcomePage.module.scss';
+import styles from './WelcomePage.module.scss';
 import React from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useAuthStore} from '@/stores/authStore';
@@ -40,7 +40,7 @@ const WelcomePage = () => {
     };
 
     return (
-        <div className="welcome-page">
+        <div className={`${styles['welcome-page']} welcome-page`}>
             {/* 헤더 */}
             <WelcomeHeader
                 onSignupClick={handleSignupClick}
@@ -50,16 +50,17 @@ const WelcomePage = () => {
             />
 
             {/* 메인 컨텐츠 */}
-            <main className="welcome-page__main">
+            <main className={`${styles['welcome-page__main']} welcome-page__main`}>
                 <WelcomeHero/>
 
                 {/* 로그인 안 되어있을 때만 로그인 액션 표시 */}
                 {!isAuthenticated && (
-                    <div className="welcome-page__actions">
+                    <div className={`${styles['welcome-page__actions']} welcome-page__actions`}>
                         <EmailLoginButton onClick={handleEmailLogin}/>
 
-                        <div className="welcome-page__divider">
-                            <span className="welcome-page__divider-text">또는</span>
+                        <div className={`${styles['welcome-page__divider']} welcome-page__divider`}>
+                            <span
+                                className={`${styles['welcome-page__divider-text']} welcome-page__divider-text`}>또는</span>
                         </div>
 
                         <SocialButtonGroup onSocialLogin={handleSocialLogin}/>
@@ -68,12 +69,12 @@ const WelcomePage = () => {
 
                 {/* 로그인 되어있으면 다른 UI 표시 */}
                 {isAuthenticated && (
-                    <div className="welcome-page__authenticated">
-                        <p className="welcome-page__welcome-message">
+                    <div className={`${styles['welcome-page__authenticated']} welcome-page__authenticated`}>
+                        <p className={`${styles['welcome-page__welcome-message']} welcome-page__welcome-message`}>
                             환영합니다! 대화 훈련을 시작해보세요.
                         </p>
                         <button
-                            className="welcome-page__start-button"
+                            className={`${styles['welcome-page__start-button']} welcome-page__start-button`}
                             onClick={() => navigate('/training')} // 훈련 페이지로 이동
                         >
                             훈련 시작하기

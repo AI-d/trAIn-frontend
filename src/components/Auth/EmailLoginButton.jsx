@@ -1,5 +1,5 @@
 // src/components/Auth/EmailLoginButton.jsx
-// import styles from './EmailLoginButton.module.scss';
+import styles from './EmailLoginButton.module.scss';
 import React from 'react';
 
 /**
@@ -7,15 +7,15 @@ import React from 'react';
  *
  * @param {function} onClick - 버튼 클릭 핸들러
  */
-const EmailLoginButton = ({ onClick }) => {
+const EmailLoginButton = ({onClick}) => {
     return (
         <button
-            className="email-login-button"
+            className={`${styles['email-login-button']} email-login-button`}
             onClick={onClick}
             type="button"
         >
             <svg
-                className="email-login-button__icon"
+                className={`${styles['email-login-button__icon']} email-login-button__icon`}
                 width="20"
                 height="20"
                 viewBox="0 0 20 20"
@@ -37,7 +37,7 @@ const EmailLoginButton = ({ onClick }) => {
                     strokeLinejoin="round"
                 />
             </svg>
-            <span className="email-login-button__text">이메일로 로그인하기</span>
+            <span className={`${styles['email-login-button__text']} email-login-button__text`}>이메일 로그인</span>
         </button>
     );
 };
