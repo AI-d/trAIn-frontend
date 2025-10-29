@@ -1,209 +1,155 @@
 // src/pages/Auth/SocialSignupCompletePage.jsx
-
-import {useEffect, useState} from 'react';
+// import styles from './SocialSignupCompletePage.module.scss';
+import React, {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {useAuthStore} from '@/stores/authStore';
-import {DateInput} from '@/components/Auth/common/DateInput';
-import {Select} from '@/components/Auth/common/Select';
-import {TextInput} from '@/components/Auth/common/TextInput';
+import SignupStep1 from '@/components/Auth/signup/SignupStep1';
+import SocialSignupStep2 from '@/components/Auth/signup/SocialSignupStep2';
+import LoadingOverlay from '@/components/common/LoadingOverlay';
+import ErrorMessage from '@/components/common/ErrorMessage';
 
-export function SocialSignupCompletePage() {
+/**
+ * 소셜 신규 회원 가입 완료 페이지
+ *
+ * Step 1: 약관 동의
+ * Step 2: 추가 정보 입력 (이름, 생년월일, 직업)
+ */
+const SocialSignupCompletePage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const {completeSocialSignup} = useAuthStore();
+    const completeSocialSignup = useAuthStore((s) => s.completeSocialSignup);
 
-    const [socialToken, setSocialToken] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [currentStep, setCurrentStep] = useState(1); // 1 or 2
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
+    // socialTempToken
+    const [socialTempToken, setSocialTempToken] = useState('');
+
+    // Step 1: 약관 동의 데이터
+    const [consents, setConsents] = useState([]);
+
+    // Step 2: 추가 정보 데이터
     const [formData, setFormData] = useState({
+        name: '',
         birthDate: '',
         jobType: '',
         jobDetail: '',
-        marketingConsent: false
     });
 
-    const [errors, setErrors] = useState({});
-
-    const jobOptions = [
-        {value: 'STUDENT', label: '학생'},
-        {value: 'EMPLOYEE', label: '직장인'},
-        {value: 'FREELANCER', label: '프리랜서'},
-        {value: 'ENTREPRENEUR', label: '사업가'},
-        {value: 'UNEMPLOYED', label: '구직자'},
-        {value: 'OTHER', label: '기타'}
-    ];
-
+    // URL에서 token 추출
     useEffect(() => {
         const token = searchParams.get('token');
 
         if (!token) {
-            navigate('/login');
+            setError('유효하지 않은 접근입니다.');
+            setTimeout(() => {
+                navigate('/', {replace: true});
+            }, 2000);
             return;
         }
 
-        setSocialToken(token);
-
-        window.history.replaceState({}, document.title, window.location.pathname);
+        setSocialTempToken(token);
     }, [searchParams, navigate]);
 
-    const handleChange = (e) => {
-        const {name, value, type, checked} = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-
-        if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
+    // Step 1 → Step 2
+    const handleStep1Next = () => {
+        setCurrentStep(2);
     };
 
-    const validateForm = () => {
-        const newErrors = {};
-
-        if (!formData.birthDate) {
-            newErrors.birthDate = '생년월일을 입력해주세요';
-        }
-
-        if (!formData.jobType) {
-            newErrors.jobType = '직업을 선택해주세요';
-        }
-
-        if (formData.jobType === 'OTHER' && !formData.jobDetail.trim()) {
-            newErrors.jobDetail = '직업 상세를 입력해주세요';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+    // Step 2 → Step 1
+    const handleStep2Prev = () => {
+        setCurrentStep(1);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!validateForm()) return;
-
-        setLoading(true);
-        setError('');
-
+    // 최종 제출
+    const handleSubmit = async () => {
         try {
+            setIsSubmitting(true);
+            setError('');
+
+            // payload 구성
             const payload = {
+                socialTempToken,
+                name: formData.name,
                 birthDate: formData.birthDate,
                 jobType: formData.jobType,
                 jobDetail: formData.jobType === 'OTHER' ? formData.jobDetail : null,
-                consents: [
-                    {
-                        termsId: 'MARKETING_CONSENT',
-                        version: '1.0',
-                        agreed: formData.marketingConsent,
-                        required: false
-                    }
-                ]
+                consents: consents.map(consent => ({
+                    termsId: consent.termsId,
+                    version: consent.version,
+                    agreed: consent.agreed,
+                })),
             };
 
+            // 소셜 회원가입 완료 API 호출
             await completeSocialSignup(payload);
-            navigate('/');
+
+            // 성공 → 홈으로 이동
+            navigate('/', {replace: true});
+
         } catch (err) {
-            setError(err.response?.data?.message || '가입 완료 중 오류가 발생했습니다.');
+            console.error('소셜 회원가입 완료 실패:', err);
+            const errorData = err.response?.data;
+            setError(errorData?.detail || errorData?.message || '회원가입에 실패했습니다.');
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
-    if (!socialToken) {
-        return null;
+    // 로딩 중
+    if (!socialTempToken && !error) {
+        return <LoadingOverlay fullscreen message="페이지를 불러오는 중..."/>;
     }
 
     return (
         <div className="social-signup-complete-page">
-            <header className="social-signup-complete-page__header">
-                <div className="social-signup-complete-page__logo">
-                    <span>Dialogym</span>
+            <div className="social-signup-complete-page__container">
+                {/* 진행 단계 표시 */}
+                <div className="social-signup-complete-page__progress">
+                    <div className={`social-signup-complete-page__step ${currentStep === 1 ? 'active' : ''}`}>
+                        <span className="social-signup-complete-page__step-number">1</span>
+                        <span className="social-signup-complete-page__step-label">약관 동의</span>
+                    </div>
+                    <div className="social-signup-complete-page__step-divider"/>
+                    <div className={`social-signup-complete-page__step ${currentStep === 2 ? 'active' : ''}`}>
+                        <span className="social-signup-complete-page__step-number">2</span>
+                        <span className="social-signup-complete-page__step-label">정보 입력</span>
+                    </div>
                 </div>
-            </header>
 
-            <main className="social-signup-complete-page__main">
-                <div className="social-signup-complete-page__container">
-                    <h1 className="social-signup-complete-page__title">추가 정보 입력</h1>
-                    <p className="social-signup-complete-page__subtitle">
-                        마지막 단계입니다. 추가 정보를 입력해주세요.
-                    </p>
+                {/* 에러 메시지 */}
+                {error && (
+                    <div className="social-signup-complete-page__error">
+                        <ErrorMessage message={error} type="error"/>
+                    </div>
+                )}
 
-                    <form onSubmit={handleSubmit} className="social-signup-complete-form">
-                        <div className="social-signup-complete-form__fields">
-                            <DateInput
-                                name="birthDate"
-                                value={formData.birthDate}
-                                onChange={handleChange}
-                                label="생년월일"
-                                error={errors.birthDate}
-                                disabled={loading}
-                                required
-                            />
+                {/* Step 1: 약관 동의 */}
+                {currentStep === 1 && (
+                    <SignupStep1
+                        consents={consents}
+                        onConsentsChange={setConsents}
+                        onNext={handleStep1Next}
+                    />
+                )}
 
-                            <Select
-                                name="jobType"
-                                value={formData.jobType}
-                                onChange={handleChange}
-                                options={jobOptions}
-                                label="직업"
-                                placeholder="직업을 선택하세요"
-                                error={errors.jobType}
-                                disabled={loading}
-                                required
-                            />
+                {/* Step 2: 추가 정보 입력 */}
+                {currentStep === 2 && (
+                    <SocialSignupStep2
+                        formData={formData}
+                        onFormChange={setFormData}
+                        onPrev={handleStep2Prev}
+                        onSubmit={handleSubmit}
+                        isSubmitting={isSubmitting}
+                    />
+                )}
+            </div>
 
-                            {formData.jobType === 'OTHER' && (
-                                <TextInput
-                                    name="jobDetail"
-                                    value={formData.jobDetail}
-                                    onChange={handleChange}
-                                    placeholder="직업을 입력해주세요"
-                                    error={errors.jobDetail}
-                                    disabled={loading}
-                                    required
-                                />
-                            )}
-
-                            <div className="social-signup-complete-form__checkbox">
-                                <label className="checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        name="marketingConsent"
-                                        checked={formData.marketingConsent}
-                                        onChange={handleChange}
-                                        disabled={loading}
-                                    />
-                                    <span className="checkbox-label__text">
-                    마케팅 정보 수신에 동의합니다 (선택)
-                  </span>
-                                </label>
-                            </div>
-                        </div>
-
-                        {error && (
-                            <div className="social-signup-complete-form__error">
-                                {error}
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            className={`social-signup-complete-form__submit ${loading ? 'social-signup-complete-form__submit--loading' : ''}`}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <div className="social-signup-complete-form__spinner"/>
-                            ) : (
-                                '가입 완료'
-                            )}
-                        </button>
-                    </form>
-                </div>
-            </main>
+            {/* 전체 화면 로딩 */}
+            {isSubmitting && <LoadingOverlay fullscreen message="회원가입을 완료하는 중..."/>}
         </div>
     );
-}
+};
+
+export default SocialSignupCompletePage;
