@@ -415,8 +415,8 @@
     opacity: 0.3;
   }
 }
-/* STT 에러
- 메시지 */
+
+/* STT 에러 메시지 */
 .sttErrorContainer {
   position: fixed;
   bottom: 120px;
@@ -447,5 +447,86 @@
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ========================================
+   차단된 페이지 스타일
+   ======================================== */
+.blockedContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fb 0%, #e5e7eb 100%);
+}
+
+.blockedContent {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 32px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.blockedTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &::before {
+    content: '';
+    font-size: 32px;
+  }
+}
+
+.blockedMessage {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 32px 0;
+  white-space: pre-line;
+}
+
+.goBackButton {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #6b8ee8 0%, #5b7fdb 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(91, 127, 219, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(91, 127, 219, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

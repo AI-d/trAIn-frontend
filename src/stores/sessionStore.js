@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import {persist} from "zustand/middleware/persist";
+import { persist } from 'zustand/middleware';
 
 /**
  * 시나리오 기반 세션 상태 관리 store
@@ -127,10 +127,10 @@ const useSessionStore = create(
                 }));
             },
 
-            // 오래된 세션 정리 (7일 이상)
+            // 오래된 세션 정리 (1일 이상)
             clearOldSessions: () => {
                 const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 1);
                 
                 set((state) => {
                     const filteredSessions = {};
@@ -146,19 +146,6 @@ const useSessionStore = create(
         }),
         {
             name: 'session-storage',
-            serialize: (state) => {
-                JSON.stringify({
-                    ...state,
-                    completedSessions: Array.from(state.completedSessions),
-                });
-            },
-            deserialize: (str) => {
-                const data = JSON.parse(str);
-                return {
-                    ...data,
-                    completedSessions: new Set(data.completedSessions || []),
-                };
-            },
         }
     )
 );

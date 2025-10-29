@@ -69,10 +69,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const RECONNECT_DELAY = 2000;
 
     const {
-        completeSession,
+        getExistingSession,
         startSession,
+        resumeSession,
+        completeSession,
+        abandonSession,
         isSessionCompleted,
-
+        isSessionInProgress,
+        updateLastActivity,
     } = useSessionStore();
 
     // 이상한 STT 결과 필터링 함수
@@ -147,22 +151,42 @@ export const useRealtimeSession = (scenarioId, userId) => {
      */
     const initRealtimeConnection = useCallback(async () => {
         if (!isMountedRef.current) return;
-        if(isSessionCompleted(sessionId)) return;
+
+        // 1. 기존 세션 존재 여부 확인 (모든 상태 차단)
+        const existingSession = getExistingSession(scenarioId, userId);
+        if (existingSession) {
+            const status = existingSession.status;
+            if (status === 'completed') {
+                console.log('완료된 시나리오입니다.');
+                throw new Error('완료된 시나리오입니다.');
+                // 시나리오 재시작 비즈니스 로직 필요함
+            } else if (status === 'abandoned') {
+                console.log('중단된 시나리오입니다. 새로 시작해주세요.');
+                throw new Error('중단된 시나리오입니다. 새로 시작해주세요.');
+                // 시나리오 재시작 비즈니스 로직 필요함
+            } else if (status === 'in_progress') {
+                console.log('이미 진행 중인 시나리오입니다.');
+                throw new Error('이미 진행 중인 시나리오입니다.');
+            }
+        }
 
         setLoading(true);
         setIsInitialGreeting(true);
 
         try {
+            // 2. 새 세션 생성 (기존 세션은 위에서 이미 차단됨)
+            console.log('새 세션 생성');
             const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId });
             if (!isMountedRef.current) return;
 
-            const newSessionId = sessionResponse.data.data.sessionId;
-            setSessionId(newSessionId);
-            // zustand 에 세션 전역 관리 등록
-            startSession(newSessionId);
+            const targetSessionId = sessionResponse.data.data.sessionId;
+            startSession(targetSessionId, scenarioId, userId);
 
+            setSessionId(targetSessionId);
+
+            // 3. Ephemeral Key 발급 (재개 시에도 새로 발급)
             const ephemeralResponse = await apiClient.post('/realtime/session', {
-                sessionId: newSessionId,
+                sessionId: targetSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01",
                 voice: "alloy",
                 sttModel: "whisper-1",
@@ -180,12 +204,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
             if (!isMountedRef.current) return;
 
-            // WebSocket 먼저 연결
-            await initWebSocket(newSessionId, false);
+            // 4. WebSocket 연결 (항상 새 세션)
+            await initWebSocket(targetSessionId, false);
             if (!isMountedRef.current) return;
 
-            // WebRTC 연결
-            await initWebRtc(ephemeralKey, newSessionId);
+            // 5. WebRTC 연결
+            await initWebRtc(ephemeralKey, targetSessionId);
 
         } catch (err) {
             console.error("Realtime 연결 실패:", err);
@@ -199,7 +223,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 setLoading(false);
             }
         }
-    }, [userId, scenarioId])
+    }, [userId, scenarioId, getExistingSession, startSession])
 
     /**
      * webSocket 연결 초기화
@@ -598,6 +622,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
                     sendTranscript('user', data.transcript);
 
+                    // 활동 시간 업데이트
+                    updateLastActivity(scenarioId, userId);
+
                     // STT 결과가 도착했으므로 응답 요청
                     if (waitingForSTTRef.current) {
                         waitingForSTTRef.current = false;
@@ -940,7 +967,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
     /**
      * 세션 종료
      */
-    const handleEndSession = async () => {
+    const handleEndSession = async (isCompleted = true) => {
         if (loading) return;
         setLoading(true);
         try {
@@ -953,13 +980,19 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 return;
             }
 
+            // 백엔드에 세션 완료 알림
             await apiClient.put(`sessions/${sessionId}/complete`, { sessionId });
 
-            // zustand 종료된 세션 등록
-            completeSession(sessionId);
+            // zustand에서 세션 상태 업데이트
+            if (isCompleted) {
+                completeSession(scenarioId, userId);
+                console.log("세션 완료 처리됨");
+            } else {
+                abandonSession(scenarioId, userId);
+                console.log("세션 중단 처리됨");
+            }
 
             cleanupConnection();
-            alert("대화가 종료되었습니다!");
 
         } catch (err) {
             console.error("세션 종료 실패:", err);

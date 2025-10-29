@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRealtimeSession } from "@/hooks/useRealtimeSession.js";
+import useSessionStore from "@/stores/sessionStore.js";
 import styles from "./DialoguePage.module.scss";
 import toast from "react-hot-toast";
 import { FiMic, FiMicOff, FiX } from "react-icons/fi";
@@ -18,6 +19,13 @@ const DialoguePage = () => {
     // 유저 정보 (추후 authStore에서 가져오게 수정)
     const userId = 1;
 
+    // 세션 상태 관리
+    const { getExistingSession } = useSessionStore();
+    
+    // 페이지 상태 관리
+    const [pageStatus, setPageStatus] = useState('checking'); // 'checking' | 'blocked' | 'connecting'
+    const [blockReason, setBlockReason] = useState('');
+
     // 리액트 커스텀 훅
     const {
         connected,
@@ -34,26 +42,47 @@ const DialoguePage = () => {
         audioTagRef,
     } = useRealtimeSession(scenarioId || null, userId);
 
-    // 페이지 진입 시 자동 연결
+    // 세션 상태 체크
     useEffect(() => {
-        let isCancelled = false;
-
         if (!scenarioId) {
+            setPageStatus('blocked');
+            setBlockReason('시나리오 정보가 없습니다.');
+            
             toast.error('시나리오 정보가 없습니다.\n시나리오 화면으로 이동합니다.', {
                 duration: 2000,
             });
 
-            const timer = setTimeout(() => {
-                if (!isCancelled) {
-                    navigate('/');
-                }
-            }, 2000);
-
-            return () => {
-                isCancelled = true;
-                clearTimeout(timer);
-            };
+            setTimeout(() => navigate('/'), 2000);
+            return;
         }
+
+        // 세션 상태 확인
+        const existingSession = getExistingSession(scenarioId, userId);
+        if (existingSession) {
+            const status = existingSession.status;
+            
+            if (status === 'completed') {
+                setPageStatus('blocked');
+                setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
+            } else if (status === 'abandoned') {
+                setPageStatus('blocked');
+                setBlockReason('종료된 대화입니다.\n새로 시작하려면 페이지를 새로고침해주세요.');
+            } else if (status === 'in_progress') {
+                setPageStatus('blocked');
+                setBlockReason('이미 진행 중인 시나리오입니다.\n완료 후 다시 시도해주세요.');
+            } else {
+                setPageStatus('connecting');
+            }
+        } else {
+            setPageStatus('connecting');
+        }
+    }, [scenarioId, userId, getExistingSession, navigate]);
+
+    // 연결 시작 (pageStatus가 'connecting'일 때만)
+    useEffect(() => {
+        if (pageStatus !== 'connecting') return;
+
+        let isCancelled = false;
 
         console.log('🚀 대화 페이지 진입 - 연결 시작:', scenarioId);
 
@@ -67,21 +96,29 @@ const DialoguePage = () => {
             })
             .catch((error) => {
                 if (!isCancelled) {
-                    toast.error('연결에 실패했습니다.\n다시 시도해주세요.', { id: connectingToast });
+                    toast.error('연결에 실패했습니다.\n다시 시도해주세요.', { id: connectingToast, duration: 3000 });
                     console.error('❌ 연결 실패:', error);
 
                     setTimeout(() => {
                         if (!isCancelled) {
                             navigate('/');
                         }
-                    }, 2000);
+                    }, 3000);
                 }
             });
 
         return () => {
             isCancelled = true;
         };
-    }, [scenarioId, initRealtimeConnection, navigate]);
+    }, [pageStatus, scenarioId, initRealtimeConnection, navigate]);
+
+    // 차단된 페이지 자동 이동
+    useEffect(() => {
+        if (pageStatus === 'blocked') {
+            toast.error(blockReason, { duration: 3000 });
+            setTimeout(() => navigate('/'), 3000);
+        }
+    }, [pageStatus, blockReason, navigate]);
 
 
     // 메시지 추가 시 자동 스크롤
@@ -102,8 +139,8 @@ const DialoguePage = () => {
         const endingToast = toast.loading('대화를 종료하는 중...');
 
         try {
-            await handleEndSession();
-            toast.success('대화가 종료되었습니다!', { id: endingToast });
+            await handleEndSession(false); // 중단으로 처리
+            toast.success('대화가 중단되었습니다!', { id: endingToast });
 
             setTimeout(() => {
                 navigate('/');
@@ -123,7 +160,7 @@ const DialoguePage = () => {
         const endingToast = toast.loading('대화를 완료하는 중...');
 
         try {
-            await handleEndSession();
+            await handleEndSession(true); // 완료로 처리
             toast.success('대화 연습이 완료되었습니다!', { id: endingToast });
 
             setTimeout(() => {
@@ -152,10 +189,10 @@ const DialoguePage = () => {
 
     // 연결 상태별 UI 표시
     const getStatusText = () => {
-        if (loading) return '연결 중...';
-        if (!connected) return 'WebRTC 연결 대기 중...';
-        if (!wsConnected) return 'WebSocket 연결 중...';
-        if (isInitialGreeting) return 'AI 인사 대기 중...';
+        if (loading) return 'AI 친구를 소환하는 중...';
+        if (!connected) return '차원의 문을 여는 중...';
+        if (!wsConnected) return '텔레파시 채널 연결 중...';
+        if (isInitialGreeting) return 'AI가 인사를 준비하는 중...';
         return 'AI와 대화 중';
     };
 
@@ -165,6 +202,40 @@ const DialoguePage = () => {
         return '#10B981'; // 초록
     };
 
+
+    // 차단된 페이지 렌더링
+    if (pageStatus === 'blocked') {
+        return (
+            <div className={styles.pageContainer}>
+                <div className={styles.blockedContainer}>
+                    <div className={styles.blockedContent}>
+                        <h2 className={styles.blockedTitle}></h2>
+                        <p className={styles.blockedMessage}>{blockReason}</p>
+                        <button 
+                            className={styles.goBackButton}
+                            onClick={() => navigate('/')}
+                        >
+                            시나리오 목록으로 돌아가기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // 세션 체크 중 렌더링
+    if (pageStatus === 'checking') {
+        return (
+            <div className={styles.pageContainer}>
+                <div className={styles.loadingOverlay}>
+                    <div className={styles.loadingContent}>
+                        <div className={styles.spinner}></div>
+                        <p className={styles.loadingText}>세션 확인 중...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.pageContainer}>
@@ -200,7 +271,7 @@ const DialoguePage = () => {
                     <div className={styles.loadingContent}>
                         <div className={styles.spinner}></div>
                         <p className={styles.loadingText}>{getStatusText()}</p>
-                        {!connected && <p className={styles.loadingSubtext}>WebRTC 연결 중...</p>}
+                        {!connected && <p className={styles.loadingSubtext}></p>}
                         {connected && !wsConnected && <p className={styles.loadingSubtext}>WebSocket 연결 중...</p>}
                     </div>
                 </div>
