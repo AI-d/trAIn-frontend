@@ -1,6 +1,6 @@
 /* src/pages/Welcome/WelcomePage.module.scss */
 
-/* --- 기존 로컬 변수(유지). 후속 작업에서 _variables.scss로 이동 권장 --- */
+/* --- 기존 로컬 변수(유지) --- */
 $soft-white: #F8F9FB;
 $warm-gray: #6B7280;
 $border-gray: #D1D5DB;
@@ -12,7 +12,7 @@ $gradient-primary: linear-gradient(135deg, $primary-blue-light 0%, $primary-blue
 $radius-md: 12px;
 $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
 
-/* --- 접근성: 공용 포커스 링 (필요한 요소에만 선택 적용) --- */
+/* --- 접근성: 공용 포커스 링 --- */
 @mixin focus-ring {
   outline: 2px solid $primary-blue;
   outline-offset: 2px;
@@ -27,12 +27,6 @@ $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
   }
 }
 
-/* --- iOS 세이프 영역 유틸 (필요 시 자식 요소에서 @extend 가능) --- */
-.safe {
-  padding-left: max(env(safe-area-inset-left), 16px);
-  padding-right: max(env(safe-area-inset-right), 16px);
-}
-
 .welcome-page {
   display: flex;
   flex-direction: column;
@@ -40,19 +34,21 @@ $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
   max-width: 430px;
   margin: 0 auto;
   background-color: $soft-white;
+  border-left: 1px solid $border-gray;
+  border-right: 1px solid $border-gray;
 
   &__main {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* 기존 padding 유지 + 세이프 영역 선택 적용 */
+    justify-content: center;
     padding: 24px 16px;
-    @extend .safe;
   }
 
   &__actions {
     width: 100%;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -64,7 +60,7 @@ $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
     align-items: center;
     width: 100%;
     color: $warm-gray;
-    margin: 8px 0; /* 시각적 여백 보강 */
+    margin: 8px 0;
 
     &::before,
     &::after {
@@ -99,6 +95,7 @@ $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
 
   &__start-button {
     width: 100%;
+    max-width: 100%;
     background: $gradient-primary;
     color: #fff;
     border: none;
@@ -107,12 +104,10 @@ $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    /* rgba(SCSS 색상) 사용 유지: 전역 변수 전환 전까지 안전 */
     box-shadow: 0 4px 12px rgba($primary-blue, 0.2);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 
     &:hover {
-      /* scale 유지(기존 UX 존중). 필요 시 translateY(-1px) 권장 */
       transform: scale(1.03);
       box-shadow: 0 6px 16px rgba($primary-blue, 0.3);
     }
@@ -134,7 +129,7 @@ $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
   }
 }
 
-/* --- (옵션) 다크 모드: 배경/텍스트 대비 향상 --- */
+/* --- 다크 모드 --- */
 @media (prefers-color-scheme: dark) {
   .welcome-page {
     background-color: #12161F;
@@ -154,7 +149,7 @@ $shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
   }
 }
 
-/* --- (옵션) 작은 반응형 확장 --- */
+/* --- 반응형 확장 (옵션) --- */
 @media (min-width: 480px) {
   .welcome-page {
     max-width: 540px;
