@@ -1,74 +1,85 @@
 // src/pages/Auth/CallbackPage.jsx
-
-import {useEffect, useState} from 'react';
+// import styles from './CallbackPage.module.scss';
+import React, {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {useAuthStore} from '@/stores/authStore';
+import CallbackStatus from '@/components/Auth/callback/CallbackStatus';
 
-export function CallbackPage() {
+/**
+ * 소셜 로그인 콜백 페이지
+ *
+ * 플로우:
+ * 1. URL에서 code 추출
+ * 2. authStore.exchangeCode(code) 호출
+ * 3. 성공 → 기존 회원 → / (홈) 이동
+ * 4. 실패 (USER_NOT_FOUND) → 신규 회원 → /social-signup-complete?token=xxx 이동
+ */
+const CallbackPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const {exchangeCode} = useAuthStore();
+    const exchangeCode = useAuthStore((s) => s.exchangeCode);
+
     const [status, setStatus] = useState('loading');
-    const [error, setError] = useState('');
+    const [message, setMessage] = useState('');
 
     useEffect(() => {
-        const code = searchParams.get('code');
+        const handleCallback = async () => {
+            const code = searchParams.get('code');
 
-        if (!code) {
-            setStatus('error');
-            setError('인증 코드가 없습니다.');
-            return;
-        }
+            if (!code) {
+                setStatus('error');
+                setMessage('인증 코드가 없습니다.');
+                return;
+            }
 
-        const handleTokenExchange = async () => {
             try {
+                setStatus('loading');
+                setMessage('로그인 정보를 확인하는 중...');
+
                 await exchangeCode(code);
 
-                window.history.replaceState({}, document.title, window.location.pathname);
+                setStatus('success');
+                setMessage('로그인 성공! 홈으로 이동합니다.');
 
-                navigate('/');
-            } catch (err) {
-                setStatus('error');
-                setError(err.response?.data?.message || '로그인 처리 중 오류가 발생했습니다.');
+                setTimeout(() => {
+                    navigate('/', {replace: true}); // ← 홈으로 이동
+                }, 1500);
+
+            } catch (error) {
+                console.error('소셜 로그인 콜백 실패:', error);
+
+                const errorData = error.response?.data;
+                const errorCode = errorData?.error || errorData?.errorCode;
+
+                if (errorCode === 'USER_NOT_FOUND') {
+                    const socialTempToken = errorData?.data?.socialTempToken;
+
+                    if (socialTempToken) {
+                        setMessage('추가 정보 입력이 필요합니다...');
+                        setTimeout(() => {
+                            navigate(`/social-signup-complete?token=${socialTempToken}`, {replace: true});
+                        }, 1000);
+                    } else {
+                        setStatus('error');
+                        setMessage('회원가입 정보를 불러올 수 없습니다.');
+                    }
+                } else {
+                    setStatus('error');
+                    setMessage(errorData?.detail || errorData?.message || '로그인 처리 중 오류가 발생했습니다.');
+                }
             }
         };
 
-        handleTokenExchange();
+        handleCallback();
     }, [searchParams, exchangeCode, navigate]);
 
-    const handleRetryClick = () => {
-        navigate('/login');
-    };
-
-    if (status === 'loading') {
-        return (
-            <div className="callback-page">
-                <div className="callback-page__container">
-                    <div className="callback-page__spinner"/>
-                    <p className="callback-page__message">로그인 처리 중...</p>
-                </div>
+    return (
+        <div className="callback-page">
+            <div className="callback-page__container">
+                <CallbackStatus status={status} message={message}/>
             </div>
-        );
-    }
+        </div>
+    );
+};
 
-    if (status === 'error') {
-        return (
-            <div className="callback-page">
-                <div className="callback-page__container">
-                    <div className="callback-page__error-icon">⚠️</div>
-                    <h2 className="callback-page__error-title">로그인 실패</h2>
-                    <p className="callback-page__error-message">{error}</p>
-                    <button
-                        className="callback-page__retry-btn"
-                        onClick={handleRetryClick}
-                        type="button"
-                    >
-                        다시 로그인하기
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    return null;
-}
+export default CallbackPage;
