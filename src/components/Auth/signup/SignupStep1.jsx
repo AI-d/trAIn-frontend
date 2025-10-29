@@ -1,149 +1,97 @@
-// src/components/Auth/SignupStep1.jsx
+// src/components/Auth/signup/SignupStep1.jsx
+// import styles from './SignupStep1.module.scss';
+import React, {useState} from 'react';
+import TermsList from './terms/TermsList';
+import Modal from '@/components/common/Modal/Modal';
+import {validateRequiredTerms} from '@/utils/validation';
+import ErrorMessage from '@/components/common/ErrorMessage';
 
-import {useEffect, useState} from 'react';
+/**
+ * 회원가입 Step 1 - 약관 동의
+ * 로컬 회원가입, 소셜 회원가입 모두 사용
+ *
+ * @param {Array} consents - 약관 동의 상태
+ * @param {function} onConsentsChange - 약관 동의 변경 핸들러
+ * @param {function} onNext - 다음 단계로 이동 핸들러
+ */
+const SignupStep1 = ({consents, onConsentsChange, onNext}) => {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedTerm, setSelectedTerm] = useState(null);
+    const [error, setError] = useState('');
 
-export function SignupStep1({value = [], onChange}) {
-    const [terms, setTerms] = useState([]);
-    const [consents, setConsents] = useState([]);
-    const [showDetailModal, setShowDetailModal] = useState(false);
-    const [selectedTerms, setSelectedTerms] = useState(null);
+    // 약관 상세 보기
+    const handleViewDetail = (term) => {
+        setSelectedTerm(term);
+        setModalOpen(true);
+    };
 
-    useEffect(() => {
-        loadTerms();
-    }, []);
+    // 모달 닫기
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setSelectedTerm(null);
+    };
 
-    const loadTerms = async () => {
-        try {
-            const mockTerms = [
-                {
-                    termsId: 'TERMS_OF_SERVICE',
-                    title: '서비스 이용약관',
-                    version: '1.0',
-                    required: true,
-                    content: '서비스 이용약관 내용...'
-                },
-                {
-                    termsId: 'PRIVACY_POLICY',
-                    title: '개인정보 처리방침',
-                    version: '1.0',
-                    required: true,
-                    content: '개인정보 처리방침 내용...'
-                },
-                {
-                    termsId: 'MARKETING_CONSENT',
-                    title: '마케팅 정보 수신 동의',
-                    version: '1.0',
-                    required: false,
-                    content: '마케팅 정보 수신 동의 내용...'
-                }
-            ];
-
-            setTerms(mockTerms);
-
-            const initialConsents = mockTerms.map(term => ({
-                termsId: term.termsId,
-                version: term.version,
-                agreed: false,
-                required: term.required
-            }));
-
-            setConsents(initialConsents);
-            onChange(initialConsents);
-        } catch (error) {
-            console.error('Failed to load terms:', error);
+    // 다음 단계로
+    const handleNext = () => {
+        // 필수 약관 검증
+        if (!validateRequiredTerms(consents)) {
+            setError('필수 약관에 모두 동의해주세요.');
+            return;
         }
+
+        setError('');
+        onNext();
     };
-
-    const handleTermsChange = (termsId, checked) => {
-        const updatedConsents = consents.map(consent =>
-            consent.termsId === termsId ? {...consent, agreed: checked} : consent
-        );
-
-        setConsents(updatedConsents);
-        onChange(updatedConsents);
-    };
-
-    const handleAgreeAll = (checked) => {
-        const updatedConsents = consents.map(consent => ({
-            ...consent,
-            agreed: checked
-        }));
-
-        setConsents(updatedConsents);
-        onChange(updatedConsents);
-    };
-
-    const handleDetailClick = (termsId) => {
-        const term = terms.find(t => t.termsId === termsId);
-        setSelectedTerms(term);
-        setShowDetailModal(true);
-    };
-
-    const allChecked = consents.every(consent => consent.agreed);
-    const requiredChecked = consents.filter(c => c.required).every(c => c.agreed);
 
     return (
         <div className="signup-step1">
-            <h2 className="signup-step1__title">약관 동의</h2>
-
-            <div className="signup-step1__agree-all">
-                <label className="checkbox-label checkbox-label--agree-all">
-                    <input
-                        type="checkbox"
-                        checked={allChecked}
-                        onChange={(e) => handleAgreeAll(e.target.checked)}
-                    />
-                    <span className="checkbox-label__text">전체 동의</span>
-                </label>
+            {/* 타이틀 */}
+            <div className="signup-step1__header">
+                <h2 className="signup-step1__title">약관 동의</h2>
+                <p className="signup-step1__subtitle">
+                    서비스 이용을 위해 약관에 동의해주세요.
+                </p>
             </div>
 
-            <div className="signup-step1__terms-list">
-                {terms.map(term => {
-                    const consent = consents.find(c => c.termsId === term.termsId);
-                    return (
-                        <div key={term.termsId} className="terms-item">
-                            <label className="checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    checked={consent?.agreed || false}
-                                    onChange={(e) => handleTermsChange(term.termsId, e.target.checked)}
-                                />
-                                <span className="checkbox-label__text">
-                  {term.required && <span className="required-mark">*</span>}
-                                    {term.title}
-                </span>
-                            </label>
-                            <button
-                                type="button"
-                                className="terms-item__detail-btn"
-                                onClick={() => handleDetailClick(term.termsId)}
-                            >
-                                보기
-                            </button>
-                        </div>
-                    );
-                })}
+            {/* 약관 목록 */}
+            <div className="signup-step1__content">
+                <TermsList
+                    consents={consents}
+                    onConsentsChange={onConsentsChange}
+                    onViewDetail={handleViewDetail}
+                />
             </div>
 
-            {showDetailModal && selectedTerms && (
-                <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal__header">
-                            <h3>{selectedTerms.title}</h3>
-                            <button
-                                type="button"
-                                className="modal__close"
-                                onClick={() => setShowDetailModal(false)}
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <div className="modal__content">
-                            {selectedTerms.content}
-                        </div>
-                    </div>
+            {/* 에러 메시지 */}
+            {error && (
+                <div className="signup-step1__error">
+                    <ErrorMessage message={error} type="error"/>
                 </div>
             )}
+
+            {/* 다음 버튼 */}
+            <div className="signup-step1__actions">
+                <button
+                    type="button"
+                    className="signup-step1__next-button"
+                    onClick={handleNext}
+                >
+                    다음
+                </button>
+            </div>
+
+            {/* 약관 상세 모달 */}
+            <Modal
+                isOpen={modalOpen}
+                type="terms"
+                data={{
+                    title: selectedTerm?.title,
+                    content: selectedTerm?.content,
+                }}
+                onClose={handleCloseModal}
+            />
         </div>
     );
-}
+};
+
+export default SignupStep1;

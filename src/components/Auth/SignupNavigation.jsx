@@ -1,42 +1,28 @@
-// src/components/Auth/LoginForm.jsx
+// src/components/Auth/SignupNavigation.jsx
+// import styles from './SignupNavigation.module.scss';
+import React from 'react';
 
-import {StepIndicator} from './common/StepIndicator';
-
-export function SignupNavigation({
-                                     currentStep,
-                                     onPrevious,
-                                     onNext,
-                                     canGoNext = false,
-                                     canGoPrevious = true,
-                                     loading = false
-                                 }) {
+/**
+ * 회원가입 단계 네비게이션 컴포넌트
+ *
+ * @param {number} currentStep - 현재 단계 (1 or 2)
+ */
+const SignupNavigation = ({currentStep}) => {
     return (
         <div className="signup-navigation">
-            <StepIndicator currentStep={currentStep} totalSteps={2}/>
+            <div className={`signup-navigation__step ${currentStep === 1 ? 'signup-navigation__step--active' : ''}`}>
+                <span className="signup-navigation__step-number">1</span>
+                <span className="signup-navigation__step-label">약관 동의</span>
+            </div>
 
-            <div className="signup-navigation__buttons">
-                {currentStep > 1 && (
-                    <button
-                        type="button"
-                        className="signup-navigation__btn signup-navigation__btn--previous"
-                        onClick={onPrevious}
-                        disabled={!canGoPrevious || loading}
-                    >
-                        이전
-                    </button>
-                )}
+            <div className="signup-navigation__divider"/>
 
-                {currentStep < 2 && (
-                    <button
-                        type="button"
-                        className="signup-navigation__btn signup-navigation__btn--next"
-                        onClick={onNext}
-                        disabled={!canGoNext || loading}
-                    >
-                        다음
-                    </button>
-                )}
+            <div className={`signup-navigation__step ${currentStep === 2 ? 'signup-navigation__step--active' : ''}`}>
+                <span className="signup-navigation__step-number">2</span>
+                <span className="signup-navigation__step-label">정보 입력</span>
             </div>
         </div>
     );
-}
+};
+
+export default SignupNavigation;
