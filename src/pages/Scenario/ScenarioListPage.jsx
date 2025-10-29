@@ -34,10 +34,11 @@ const ScenarioListPage = () => {
         fetchUserScenarios(userId);
     }, [fetchDefaultScenarios, fetchUserScenarios]);
 
-    const handleScenarioClick = (scenario) => {
+    // TODO: 시나리오 상세 조회 페이지 존재X, 생성되면 연결, 현재 기능 기준 필요 없음
+    /*const handleScenarioClick = (scenario) => {
         setSelectedScenario(scenario);
         navigate(`/scenarios/${scenario.id}`);
-    };
+    };*/
 
     const handleStartDialogue = (scenario) => {
         console.log('handleStartDialogue - scenario 객체:', scenario);

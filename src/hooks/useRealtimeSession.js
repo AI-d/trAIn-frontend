@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import apiClient from "@/services/apiClient.js";
+import useSessionStore from "@/stores/sessionStore.js";
 
 /**
  * GPT Realtime + WebSocket 통합 Hook
@@ -66,6 +67,13 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const MIN_USER_SPEECH_DURATION = 500;
     const MAX_RECONNECT_ATTEMPTS = 5;
     const RECONNECT_DELAY = 2000;
+
+    const {
+        completeSession,
+        startSession,
+        isSessionCompleted,
+
+    } = useSessionStore();
 
     // 이상한 STT 결과 필터링 함수
     const isInvalidSTTResult = (text) => {
@@ -139,6 +147,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
      */
     const initRealtimeConnection = useCallback(async () => {
         if (!isMountedRef.current) return;
+        if(isSessionCompleted(sessionId)) return;
 
         setLoading(true);
         setIsInitialGreeting(true);
@@ -149,6 +158,8 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
             const newSessionId = sessionResponse.data.data.sessionId;
             setSessionId(newSessionId);
+            // zustand 에 세션 전역 관리 등록
+            startSession(newSessionId);
 
             const ephemeralResponse = await apiClient.post('/realtime/session', {
                 sessionId: newSessionId,
@@ -943,6 +954,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
             }
 
             await apiClient.put(`sessions/${sessionId}/complete`, { sessionId });
+
+            // zustand 종료된 세션 등록
+            completeSession(sessionId);
+
             cleanupConnection();
             alert("대화가 종료되었습니다!");
 
