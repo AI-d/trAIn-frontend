@@ -5,7 +5,7 @@ import AppHeader from "../components/Header/AppHeader.jsx";
 const AppLayout = () => {
     return (
         <>
-            <AppHeader />
+            {/*<AppHeader />*/}
             {/* 실제로 바뀌는 동적인 부분 */}
             <Outlet />
         </>

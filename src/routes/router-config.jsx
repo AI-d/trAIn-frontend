@@ -3,6 +3,7 @@ import AppLayout from "../layouts/AppLayout.jsx";
 import AiTest from "../AiTest.jsx";
 import ScenarioListPage from "@/pages/Scenario/ScenarioListPage.jsx";
 import DialoguePage from "@/pages/Dialogue/DialoguePage.jsx";
+import CreateScenarioPage from "@/pages/Scenario/CreateScenarioPage.jsx";
 
 // 라우터 설정
 export const router = createBrowserRouter([
@@ -13,15 +14,20 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <ScenarioListPage />,
+                element: <ScenarioListPage />
             },
             // 추가적인 라우트는 여기에 정의
-        ],
-    },
-        {
-            path: '/dialogue',
-            element: <DialoguePage />
-        }
+            {
+                path: '/dialogue',
+                element: <DialoguePage />
+            },
+            {
+              path: '/create',
+              element: <CreateScenarioPage />
+            },
+        ]
+    }
+
 ]
 );
 

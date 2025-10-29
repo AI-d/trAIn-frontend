@@ -271,8 +271,8 @@ const DialoguePage = () => {
                     <div className={styles.loadingContent}>
                         <div className={styles.spinner}></div>
                         <p className={styles.loadingText}>{getStatusText()}</p>
-                        {!connected && <p className={styles.loadingSubtext}></p>}
-                        {connected && !wsConnected && <p className={styles.loadingSubtext}>WebSocket 연결 중...</p>}
+                        {!connected && <p className={styles.loadingSubtext}>연결 중...</p>}
+                        {connected && !wsConnected && <p className={styles.loadingSubtext}>연결 중...</p>}
                     </div>
                 </div>
             )}
