@@ -77,6 +77,13 @@ export const validateBirthDate = (birthDate) => {
     const minDate = new Date('1900-01-01');
     if (date < minDate) return false;
 
+    const minAge = 14;
+    const minBirthDate = new Date();
+    minBirthDate.setFullYear(minBirthDate.getFullYear() - minAge);
+    minBirthDate.setHours(0, 0, 0, 0);
+
+    if (date > minBirthDate) return false;
+
     return true;
 };
 
@@ -172,7 +179,24 @@ export const getErrorMessage = {
 
     birthDate: (birthDate) => {
         if (!birthDate) return '생년월일을 입력해주세요.';
-        if (!validateBirthDate(birthDate)) return '올바른 생년월일을 입력해주세요.';
+
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(birthDate)) return '올바른 생년월일 형식(YYYY-MM-DD)을 입력해주세요.';
+
+        const date = new Date(birthDate);
+        if (isNaN(date.getTime())) return '올바른 생년월일을 입력해주세요.';
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (date > today) return '미래 날짜는 입력할 수 없습니다.';
+        
+        const minAge = 14;
+        const minBirthDate = new Date();
+        minBirthDate.setFullYear(minBirthDate.getFullYear() - minAge);
+        minBirthDate.setHours(0, 0, 0, 0);
+
+        if (date > minBirthDate) return '만 14세 이상만 가입할 수 있습니다.';
+
         return '';
     },
 
@@ -205,10 +229,10 @@ export const getErrorMessage = {
  * 직업 옵션 목록
  */
 export const JOB_TYPE_OPTIONS = [
-    { value: 'STUDENT', label: '학생' },
-    { value: 'EMPLOYEE', label: '직장인' },
-    { value: 'SELF_EMPLOYED', label: '자영업' },
-    { value: 'FREELANCER', label: '프리랜서' },
-    { value: 'JOB_SEEKER', label: '구직자' },
-    { value: 'OTHER', label: '기타' },
+    {value: 'STUDENT', label: '학생'},
+    {value: 'EMPLOYEE', label: '직장인'},
+    {value: 'SELF_EMPLOYED', label: '자영업'},
+    {value: 'FREELANCER', label: '프리랜서'},
+    {value: 'JOB_SEEKER', label: '구직자'},
+    {value: 'OTHER', label: '기타'},
 ];

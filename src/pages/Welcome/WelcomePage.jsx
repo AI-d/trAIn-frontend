@@ -1,12 +1,14 @@
 // src/pages/Welcome/WelcomePage.jsx
 // import styles from './WelcomePage.module.scss';
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import WelcomeHeader from '@/components/Welcome/WelcomeHeader';
 import WelcomeHero from '@/components/Welcome/WelcomeHero';
 import EmailLoginButton from '@/components/Auth/EmailLoginButton';
 import SocialButtonGroup from '@/components/Auth/SocialButtonGroup';
 import WelcomeFooter from '@/components/Welcome/WelcomeFooter';
+import {API_BASE_URL} from "@/services/apiClient.js";
 
 /**
  * 웰컴 페이지 (첫 진입 페이지)
@@ -28,23 +30,23 @@ const WelcomePage = () => {
     // 소셜 로그인 (provider: 'google' | 'kakao' | 'naver')
     const handleSocialLogin = (provider) => {
         // OAuth2 엔드포인트로 리디렉트
-        window.location.href = `/oauth2/authorization/${provider}`;
+        window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
     };
 
     return (
         <div className="welcome-page">
             {/* 헤더 */}
-            <WelcomeHeader onSignupClick={handleSignupClick} />
+            <WelcomeHeader onSignupClick={handleSignupClick}/>
 
             {/* 메인 컨텐츠 */}
             <main className="welcome-page__main">
                 {/* 히어로 섹션 */}
-                <WelcomeHero />
+                <WelcomeHero/>
 
                 {/* 로그인 액션 */}
                 <div className="welcome-page__actions">
                     {/* 이메일 로그인 버튼 */}
-                    <EmailLoginButton onClick={handleEmailLogin} />
+                    <EmailLoginButton onClick={handleEmailLogin}/>
 
                     {/* 구분선 */}
                     <div className="welcome-page__divider">
@@ -52,12 +54,12 @@ const WelcomePage = () => {
                     </div>
 
                     {/* 소셜 로그인 버튼 그룹 */}
-                    <SocialButtonGroup onSocialLogin={handleSocialLogin} />
+                    <SocialButtonGroup onSocialLogin={handleSocialLogin}/>
                 </div>
             </main>
 
             {/* 푸터 */}
-            <WelcomeFooter />
+            <WelcomeFooter/>
         </div>
     );
 };

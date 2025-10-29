@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import {getAccessToken} from '@/services/tokenManager';
-import {unwrap} from '@/services/normalize';
+import {unwrap} from '@/utils/normalize';
 
 function getBackendBaseUrl() {
     const baseUrl = import.meta.env.VITE_API_BASE_URL;
