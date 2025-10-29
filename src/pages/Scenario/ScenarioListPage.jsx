@@ -40,8 +40,15 @@ const ScenarioListPage = () => {
     };
 
     const handleStartDialogue = (scenario) => {
+        console.log('handleStartDialogue - scenario 객체:', scenario);
+        console.log('handleStartDialogue - scenario.id:', scenario.id);
+        console.log('handleStartDialogue - scenario의 모든 키:', Object.keys(scenario));
+        
         setSelectedScenario(scenario);
-        navigate('/dialogue', { state: { scenarioId: scenario.id } });
+        navigate('/dialogue', { state: {
+            scenarioId: scenario.id,
+            scenarioTitle: scenario.title
+        } });
     };
 
     const handleDeleteScenario = async (e, scenarioId) => {
