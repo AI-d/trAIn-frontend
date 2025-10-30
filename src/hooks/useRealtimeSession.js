@@ -61,6 +61,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
     // STT 결과 대기 중인지 추적
     const waitingForSTTRef = useRef(false);
 
+    // 세션 복구 여부 추적
+    const isResumingRef = useRef(false);
+
     // PTT 설정
     const PTT_MAX_DURATION = 30000;
 
@@ -178,7 +181,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
         try {
             let targetSessionId;
-            let isResuming = false;
+            isResumingRef.current = false; // 초기화
 
             // 2. 세션 생성 또는 복구
             if (existingSession && (existingSession.status === 'ongoing' || existingSession.status === 'failed')) {
@@ -193,7 +196,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         // 백엔드에서도 ongoing이면 세션 복구
                         console.log('백엔드 세션 복구 가능:', existingSession.sessionId);
                         targetSessionId = existingSession.sessionId;
-                        isResuming = true;
+                        isResumingRef.current = true;
                     } else {
                         // 백엔드에서 completed면 새 세션 생성
                         console.log('백엔드 세션 완료됨, 새 세션 생성');
@@ -235,7 +238,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
             if (!isMountedRef.current) return;
 
             // 4. WebSocket 연결 (복구 여부 전달)
-            await initWebSocket(targetSessionId, isResuming);
+            await initWebSocket(targetSessionId, isResumingRef.current);
             if (!isMountedRef.current) return;
 
             // 5. WebRTC 연결
@@ -647,11 +650,11 @@ export const useRealtimeSession = (scenarioId, userId) => {
             console.log("✅ Data Channel 열림");
             setConnected(true);
 
-            // 기존 세션이 있는지 확인
-            const existingSession = getExistingSession(scenarioId, userId);
-
-            // 새 세션일 때만 첫 인사 모드 (ongoing/failed 세션은 재연결)
-            if (!existingSession || existingSession.status === 'new') {
+            // isResumingRef로 세션 복구 여부 확인
+            if (isResumingRef.current) {
+                console.log("🔄 세션 복구 - 첫 인사 건너뛰기");
+                setIsInitialGreeting(false);
+            } else {
                 console.log("🎙️ 새 세션 - 첫 인사 모드 설정");
                 setIsInitialGreeting(true);
 
@@ -664,9 +667,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         }
                     }));
                 }
-            } else {
-                console.log("🔄 세션 복구 - 첫 인사 건너뛰기 (상태:", existingSession.status, ")");
-                setIsInitialGreeting(false);
             }
         };
 
