@@ -1,8 +1,8 @@
 // src/pages/Auth/CallbackPage.jsx
-// import styles from './CallbackPage.module.scss';
-import React, {useEffect, useState} from 'react';
-import {useNavigate, useSearchParams} from 'react-router-dom';
-import {useAuthStore} from '@/stores/authStore';
+import styles from './CallbackPage.module.scss';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import CallbackStatus from '@/components/Auth/callback/CallbackStatus';
 
 /**
@@ -42,7 +42,7 @@ const CallbackPage = () => {
                 setMessage('로그인 성공! 홈으로 이동합니다.');
 
                 setTimeout(() => {
-                    navigate('/home', {replace: true}); // ← 홈으로 이동
+                    navigate('/home', { replace: true }); // ← 홈으로 이동
                 }, 1500);
 
             } catch (error) {
@@ -57,7 +57,7 @@ const CallbackPage = () => {
                     if (socialTempToken) {
                         setMessage('추가 정보 입력이 필요합니다...');
                         setTimeout(() => {
-                            navigate(`/social-signup?token=${socialTempToken}`, {replace: true});
+                            navigate(`/social-signup?token=${socialTempToken}`, { replace: true });
                         }, 1000);
                     } else {
                         setStatus('error');
@@ -74,9 +74,9 @@ const CallbackPage = () => {
     }, [searchParams, exchangeCode, navigate]);
 
     return (
-        <div className="callback-page">
-            <div className="callback-page__container">
-                <CallbackStatus status={status} message={message}/>
+        <div className={styles['callback-page']}>
+            <div className={styles['callback-page__container']}>
+                <CallbackStatus status={status} message={message} />
             </div>
         </div>
     );

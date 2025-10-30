@@ -1,0 +1,45 @@
+/* src/pages/Auth/CallbackPage.module.scss */
+
+/* --- 로컬 변수 --- */
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+
+/* --- 모션 민감 사용자 지원 --- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- 1. 페이지 셸 --- */
+.callback-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: $soft-white;
+  border-left: 1px solid $border-gray;
+  border-right: 1px solid $border-gray;
+}
+
+/* --- 2. 내부 컨테이너 --- */
+.callback-page__container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+/* --- 3. 다크 모드 --- */
+@media (prefers-color-scheme: dark) {
+  .callback-page {
+    background-color: #12161F;
+    border-left-color: #374151;
+    border-right-color: #374151;
+  }
+}
