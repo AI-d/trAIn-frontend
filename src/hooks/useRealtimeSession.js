@@ -217,23 +217,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 targetSessionId = sessionResponse.data.data.sessionId;
             }
 
-            setSessionId(targetSessionId);
-
-            // 3. Ephemeral Key 발급 (재개 시에도 새로 발급)
             const ephemeralResponse = await apiClient.post('/realtime/session', {
-                sessionId: targetSessionId,
+                sessionId: newSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01",
                 voice: "alloy",
                 sttModel: "whisper-1",
                 language: "ko"
             });
-
-            if (!isMountedRef.current) return;
-
-            if (!ephemeralResponse.data.success) {
-                throw new Error(ephemeralResponse.data.message || "Ephemeral Key 발급 실패");
-            }
-
+            if (!ephemeralResponse.data.success) throw new Error(ephemeralResponse.data.message || "Ephemeral Key 발급 실패");
             const ephemeralKey = ephemeralResponse.data.data.client_secret.value;
             console.log('Ephemeral Key 발급 완료');
             console.log(`gpt 세션: ${ephemeralResponse.data.data.id}`);
@@ -904,8 +895,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
         // 4. AI 오디오 스트림 설정 (핵심!)
         pcRef.current.ontrack = (event) => {
-            if (!isMountedRef.current) return;
-
             console.log("🎵 ontrack 이벤트!");
 
             if (!event.streams || event.streams.length === 0) return;
@@ -977,16 +966,8 @@ export const useRealtimeSession = (scenarioId, userId) => {
         };
 
         // 6. SDP Offer/Answer
-        if (!isMountedRef.current) {
-            throw new Error('Component unmounted');
-        }
-
         const offer = await pcRef.current.createOffer();
         await pcRef.current.setLocalDescription(offer);
-
-        if (!isMountedRef.current) {
-            throw new Error('Component unmounted');
-        }
 
         const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`, {
             method: "POST",
