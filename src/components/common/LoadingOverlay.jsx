@@ -1,5 +1,5 @@
 // src/components/common/LoadingOverlay.jsx
-// import styles from './LoadingOverlay.module.scss';
+import styles from './LoadingOverlay.module.scss';
 import React from 'react';
 
 /**
@@ -12,14 +12,14 @@ import React from 'react';
  */
 const LoadingOverlay = ({ fullscreen = false, message, size = 'medium' }) => {
     return (
-        <div className={`loading-overlay ${fullscreen ? 'loading-overlay--fullscreen' : ''}`}>
-            <div className="loading-overlay__content">
+        <div className={`${styles['loading-overlay']} ${fullscreen ? styles['loading-overlay--fullscreen'] : ''}`}>
+            <div className={styles['loading-overlay__content']}>
                 {/* 스피너 */}
-                <div className={`loading-overlay__spinner loading-overlay__spinner--${size}`} />
+                <div className={`${styles['loading-overlay__spinner']} ${styles[`loading-overlay__spinner--${size}`]}`} />
 
                 {/* 메시지 */}
                 {message && (
-                    <p className="loading-overlay__message">{message}</p>
+                    <p className={styles['loading-overlay__message']}>{message}</p>
                 )}
             </div>
         </div>

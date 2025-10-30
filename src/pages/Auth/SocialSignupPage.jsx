@@ -1,12 +1,13 @@
 // src/pages/Auth/SocialSignupPage.jsx
-// import styles from './SocialSignupPage.module.scss';
-import React, {useEffect, useState} from 'react';
+import styles from './SocialSignupPage.module.scss';
+import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {useAuthStore} from '@/stores/authStore';
 import SignupStep1 from '@/components/Auth/signup/SignupStep1';
 import SocialSignupStep2 from '@/components/Auth/signup/SocialSignupStep2';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import ErrorMessage from '@/components/common/ErrorMessage';
+import AuthLogo from '@/components/common/AuthLogo';
 
 const SocialSignupPage = () => {
     const navigate = useNavigate();
@@ -17,7 +18,7 @@ const SocialSignupPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
-    // ✅ socialTempToken (백엔드가 token 파라미터로 보냄)
+    // socialTempToken (백엔드가 token 파라미터로 보냄)
     const [socialTempToken, setSocialTempToken] = useState('');
 
     const [consents, setConsents] = useState([]);
@@ -92,24 +93,38 @@ const SocialSignupPage = () => {
     }
 
     return (
-        <div className="social-signup-page">
-            <div className="social-signup-page__container">
-                {/* 진행 단계 표시 */}
-                <div className="social-signup-page__progress">
-                    <div className={`social-signup-page__step ${currentStep === 1 ? 'active' : ''}`}>
-                        <span className="social-signup-page__step-number">1</span>
-                        <span className="social-signup-page__step-label">약관 동의</span>
+        <div className={styles['social-signup-page']}>
+            <div className={styles['social-signup-page__container']}>
+                {/* 로고 */}
+                <AuthLogo />
+
+                {/* 타이틀 */}
+                <div className={styles['social-signup-page__header']}>
+                    <h1 className={styles['social-signup-page__title']}>소셜 회원가입</h1>
+                    <p className={styles['social-signup-page__subtitle']}>
+                        추가 정보를 입력하고 가입을 완료하세요.
+                    </p>
+                </div>
+
+                <div className={styles['social-signup-page__progress']}>
+                    <div
+                        className={`${styles['social-signup-page__step']} ${currentStep === 1 ? styles['active'] : ''}`}
+                    >
+                        <span className={styles['social-signup-page__step-number']}>1</span>
+                        <span className={styles['social-signup-page__step-label']}>약관 동의</span>
                     </div>
-                    <div className="social-signup-page__step-divider"/>
-                    <div className={`social-signup-page__step ${currentStep === 2 ? 'active' : ''}`}>
-                        <span className="social-signup-page__step-number">2</span>
-                        <span className="social-signup-page__step-label">정보 입력</span>
+                    <div className={styles['social-signup-page__step-divider']}/>
+                    <div
+                        className={`${styles['social-signup-page__step']} ${currentStep === 2 ? styles['active'] : ''}`}
+                    >
+                        <span className={styles['social-signup-page__step-number']}>2</span>
+                        <span className={styles['social-signup-page__step-label']}>정보 입력</span>
                     </div>
                 </div>
 
                 {/* 에러 메시지 */}
                 {error && (
-                    <div className="social-signup-page__error">
+                    <div className={styles['social-signup-page__error']}>
                         <ErrorMessage message={error} type="error"/>
                     </div>
                 )}

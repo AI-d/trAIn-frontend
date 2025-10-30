@@ -1,5 +1,5 @@
 // src/components/Auth/signup/SocialSignupStep2.jsx
-// import styles from './SocialSignupStep2.module.scss';
+import styles from './SocialSignupStep2.module.scss';
 import React, {useState} from 'react';
 import DateInput from '@/components/common/inputs/DateInput';
 import Select from '@/components/common/inputs/Select';
@@ -102,17 +102,17 @@ const SocialSignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitti
     };
 
     return (
-        <div className="social-signup-step2">
+        <div className={styles['social-signup-step2']}>
             {/* 타이틀 */}
-            <div className="social-signup-step2__header">
-                <h2 className="social-signup-step2__title">추가 정보 입력</h2>
-                <p className="social-signup-step2__subtitle">
+            <div className={styles['social-signup-step2__header']}>
+                <h2 className={styles['social-signup-step2__title']}>추가 정보 입력</h2>
+                <p className={styles['social-signup-step2__subtitle']}>
                     서비스 이용을 위해 추가 정보를 입력해주세요.
                 </p>
             </div>
 
             {/* 폼 */}
-            <form className="social-signup-step2__form" onSubmit={handleSubmit}>
+            <form className={styles['social-signup-step2__form']} onSubmit={handleSubmit}>
                 {/* 생년월일 */}
                 <DateInput
                     name="birthDate"
@@ -153,11 +153,11 @@ const SocialSignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitti
                 )}
 
                 {/* 버튼 영역 */}
-                <div className="social-signup-step2__actions">
+                <div className={styles['social-signup-step2__actions']}>
                     {/* 이전 버튼 */}
                     <button
                         type="button"
-                        className="social-signup-step2__prev-button"
+                        className={styles['social-signup-step2__prev-button']}
                         onClick={onPrev}
                         disabled={isSubmitting}
                     >
@@ -167,7 +167,7 @@ const SocialSignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitti
                     {/* 완료 버튼 */}
                     <button
                         type="submit"
-                        className="social-signup-step2__submit-button"
+                        className={styles['social-signup-step2__submit-button']}
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? '가입 중...' : '가입 완료'}
