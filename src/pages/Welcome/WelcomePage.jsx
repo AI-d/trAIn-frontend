@@ -75,7 +75,7 @@ const WelcomePage = () => {
                         </p>
                         <button
                             className={`${styles['welcome-page__start-button']} welcome-page__start-button`}
-                            onClick={() => navigate('/training')} // 훈련 페이지로 이동
+                            onClick={() => navigate('/home')} // 홈 페이지로 이동
                         >
                             훈련 시작하기
                         </button>

@@ -21,14 +21,13 @@ $radius-md: 12px;
 }
 
 .email-login-button {
-  width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1.5px solid $border-gray;
-  background: #fff;
-  color: $deep-navy;
+  border: 1.5px solid $primary-blue;
+  background: $primary-blue;
+  color: #fff;
   padding: 12px 16px;
   border-radius: $radius-md;
   font-weight: 700;
