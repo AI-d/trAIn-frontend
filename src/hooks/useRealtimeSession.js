@@ -401,29 +401,108 @@ export const useRealtimeSession = (scenarioId, userId) => {
             return;
         }
 
-        let recovered = {};
+        let recovered = []; // ← 빈 배열로 초기화
+
         if (message.transcripts && message.transcripts.length > 0) {
             recovered = message.transcripts.map(item => ({
                 speaker: item.speaker.toLowerCase(),
                 text: item.content,
                 timestamp: item.timestamp
             }));
-
-            setTranscripts(recovered);
-            console.log(`대화 내역 복구 완료: ${recovered.length} 개 메세지`);
-
-            // AI 에게 컨텍스트 제공
-            const hasUserText = recovered.some(item => item.speaker === 'user');
-            if(hasUserText) {
-                const contextSend = sendRecoveryContext();
-                if(contextSend) {
-                    console.log("복구된 전체 대화 AI에게 전송완료");
-                }
-            }
-
         } else {
             console.log("복구할 대화 내역 없음");
+            return;
         }
+
+        setTranscripts(recovered);
+        console.log(`대화 내역 복구 완료: ${recovered.length} 개 메세지`);
+
+        // 복구된 대화가 있으면 초기 인사 건너뛰기
+        if (recovered.length > 0) {
+            setIsInitialGreeting(false);
+            console.log("세션 복구: 초기 인사 건너뛰기 설정");
+        }
+
+        let isContextSent = false;
+        let timeoutId = null;
+
+        // DataChannel 상태 체크 후 컨텍스트 전송
+        const sendContextWhenReady = () => {
+            // 컴포넌트 언마운트 체크
+            if (!isMountedRef.current) {
+                console.log("컴포넌트 언마운트됨 - DataChannel 대기 중단");
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                return;
+            }
+
+            if (isContextSent) {
+                console.log("이미 컨텍스트 전송됨 - 중단");
+                return;
+            }
+
+            if (!dataChannelRef.current || dataChannelRef.current.readyState !== 'open') {
+                console.log("DataChannel 대기 중...");
+                timeoutId = setTimeout(sendContextWhenReady, 500);
+                return;
+            }
+
+            isContextSent = true;
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+
+            // 사용자 발화가 있는 경우만 컨텍스트 전송
+            const hasUserText = recovered.some(item => item.speaker === 'user');
+            if (hasUserText) {
+                const contextSent = sendRecoveryContext();
+                if (contextSent) {
+                    console.log("복구된 전체 대화 AI에게 전송완료");
+
+                    // 마지막 발화자 체크 로직
+                    const lastMessage = recovered[recovered.length - 1];
+
+                    if (lastMessage && lastMessage.speaker === 'user') {
+                        // 사용자가 마지막에 말했으면 → AI가 대답해야 함
+                        dataChannelRef.current.send(JSON.stringify({
+                            type: "conversation.item.create",
+                            item: {
+                                role: "system",
+                                content: [{
+                                    type: "input_text",
+                                    text: `⚠️ 중요: 사용자가 "${lastMessage.text}"라고 마지막에 말했습니다. 새로운 인사 없이 바로 이 발화에 대해 자연스럽게 응답하세요.`
+                                }]
+                            }
+                        }));
+
+                        // AI 응답 요청
+                        setTimeout(() => {
+                            dataChannelRef.current.send(JSON.stringify({
+                                type: 'response.create',
+                                response: { modalities: ["audio", "text"] }
+                            }));
+                        }, 300);
+
+                    } else if (lastMessage && lastMessage.speaker === 'ai') {
+                        // AI가 마지막에 말했으면 → 사용자 차례 (대기)
+                        dataChannelRef.current.send(JSON.stringify({
+                            type: "conversation.item.create",
+                            item: {
+                                role: "system",
+                                content: [{
+                                    type: "input_text",
+                                    text: "위 대화를 이어서 진행하세요. 사용자의 다음 발화를 기다리세요."
+                                }]
+                            }
+                        }));
+                        // response.create 호출 안 함 (사용자 차례)
+                    }
+                }
+            }
+        };
+
+        sendContextWhenReady();
     }, []);
 
     /**
@@ -503,8 +582,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
         const analyser = aiAudioAnalyserRef.current;
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         let silenceCount = 0;
-        const SILENCE_THRESHOLD = 5;
-        const SILENCE_CHECKS = 5;
+
+        // 첫 인사는 더 관대한 설정 (음성 끊김 방지)
+        const SILENCE_THRESHOLD = isInitialGreeting ? 3 : 5;  // 첫 인사는 덜 민감하게
+        const SILENCE_CHECKS = isInitialGreeting ? 10 : 5;    // 첫 인사는 더 오래 기다리기 (2초)
+
+        console.log(`🎤 VAD 설정 - 임계값: ${SILENCE_THRESHOLD}, 체크횟수: ${SILENCE_CHECKS} (첫인사: ${isInitialGreeting})`);
 
         const checkSilence = () => {
             // aiSpeaking 체크 제거! 무조건 끝까지 분석
@@ -594,13 +677,15 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         setAiSpeaking(true);
                         aiSpeakingStartRef.current = Date.now();
 
-                        // 첫 인사가 아닐 때만 VAD 시작
+                        // 첫 인사가 아닐 때만 발화 중 VAD 시작 (더 빠른 반응)
                         if (!isInitialGreeting) {
                             setTimeout(() => {
                                 if (isMountedRef.current && aiSpeaking) {
                                     startAiVadCheck();
                                 }
                             }, 2000);
+                        } else {
+                            console.log("🎙️ 첫 인사 중 - VAD 시작 안 함 (음성 끊김 방지)");
                         }
                     }
                 }
@@ -609,7 +694,15 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 if (data.type === "output_audio_buffer.stopped") {
                     console.log("🔊 오디오 버퍼 정지 - VAD 시작");
                     if (isMountedRef.current) {
-                        startAiVadCheck();
+                        // 첫 인사면 조금만 더 기다리기 (음성 끊김 방지)
+                        const vadDelay = isInitialGreeting ? 1500 : 800;
+                        console.log(`⏰ VAD 시작 지연: ${vadDelay}ms (첫인사: ${isInitialGreeting})`);
+
+                        setTimeout(() => {
+                            if (isMountedRef.current) {
+                                startAiVadCheck();
+                            }
+                        }, vadDelay);
                     }
                 }
 
@@ -672,11 +765,17 @@ export const useRealtimeSession = (scenarioId, userId) => {
                             }
                         }, 3000);
 
-                        // 필터링된 경우에도 대기 상태 해제
-                        if (waitingForSTTRef.current) {
-                            waitingForSTTRef.current = false;
-                            console.log("🚫 필터링으로 인한 응답 요청 중단 - 사용자 피드백 제공");
-                            setVadStatus('idle');
+                        // 빈 문자열인 경우 대기 상태 유지 (실제 STT 결과 기다림)
+                        if (!data.transcript || data.transcript.trim().length === 0) {
+                            console.log("🔄 빈 STT 결과 - 실제 결과 대기 중...");
+                            // waitingForSTTRef 상태 유지 (해제하지 않음)
+                        } else {
+                            // 의미없는 감탄사 등은 대기 상태 해제
+                            if (waitingForSTTRef.current) {
+                                waitingForSTTRef.current = false;
+                                console.log("🚫 필터링으로 인한 응답 요청 중단 - 사용자 피드백 제공");
+                                setVadStatus('idle');
+                            }
                         }
                         return;
                     }
@@ -1025,6 +1124,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
         const currentTranscripts = transcriptsRef.current?.filter(t => !t.isTemp) || [];
 
+        // 1. 컨텍스트 전송
         currentTranscripts.forEach((transcript, index) => {
             dataChannelRef.current.send(JSON.stringify({
                 type: "conversation.item.create",
@@ -1033,14 +1133,28 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     type: "message",
                     role: transcript.speaker === 'user' ? 'user' : 'assistant',
                     content: [{
-                        type: "input_text", // GPT Realtime는 모두 input_text 사용
+                        type: "input_text",
                         text: transcript.text
                     }]
                 }
             }));
         });
 
-        console.log(`세션 복구: 전체 ${currentTranscripts.length}개 대화 컨텍스트 전송`);
+        // 2. 세션 복구 지시
+        dataChannelRef.current.send(JSON.stringify({
+            type: "conversation.item.create",
+            item: {
+                id: `session_recovery_${Date.now()}`,
+                type: "message",
+                role: "system",
+                content: [{
+                    type: "input_text",
+                    text: "EMERGENCY PROTOCOL: 이것은 세션 복구입니다. 위 대화는 연결 끊김 전의 실제 대화입니다. 시스템 프롬프트의 '첫 발화 생성' 지시를 완전히 무시하고, 마지막 대화 상황에서 자연스럽게 이어가세요. 절대 '안녕하세요' 같은 새로운 인사를 하지 마세요."
+                }]
+            }
+        }));
+
+        console.log(`세션 복구: 전체 ${currentTranscripts.length}개 대화 컨텍스트 전송 + 인사 금지 지시`);
         return true;
 
     }, []);
@@ -1154,6 +1268,8 @@ export const useRealtimeSession = (scenarioId, userId) => {
      * 연결 정리
      */
     const cleanupConnection = useCallback(async () => {
+        // 컴포넌트 언마운트 플래그 설정 (모든 setTimeout 중단)
+        isMountedRef.current = false;
 
         // AI VAD 정리
         if (aiSilenceCheckIntervalRef.current) {
