@@ -463,6 +463,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         dataChannelRef.current.send(JSON.stringify({
                             type: "conversation.item.create",
                             item: {
+                                type: "message",
                                 role: "system",
                                 content: [{
                                     type: "input_text",
@@ -484,6 +485,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         dataChannelRef.current.send(JSON.stringify({
                             type: "conversation.item.create",
                             item: {
+                                type: "message",
                                 role: "system",
                                 content: [{
                                     type: "input_text",
@@ -647,10 +649,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
             // 기존 세션이 있는지 확인
             const existingSession = getExistingSession(scenarioId, userId);
-            const hasExistingTranscripts = transcriptsRef.current && transcriptsRef.current.length > 0;
 
-            // 새 세션이거나 대화 내역이 없을 때만 첫 인사 모드
-            if (!existingSession || !hasExistingTranscripts) {
+            // 새 세션일 때만 첫 인사 모드 (ongoing/failed 세션은 재연결)
+            if (!existingSession || existingSession.status === 'new') {
                 console.log("🎙️ 새 세션 - 첫 인사 모드 설정");
                 setIsInitialGreeting(true);
 
@@ -664,7 +665,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     }));
                 }
             } else {
-                console.log("🔄 세션 복구 - 첫 인사 건너뛰기");
+                console.log("🔄 세션 복구 - 첫 인사 건너뛰기 (상태:", existingSession.status, ")");
                 setIsInitialGreeting(false);
             }
         };
@@ -672,7 +673,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         dataChannelRef.current.onmessage = (event) => {
             if (!isMountedRef.current) return;
 
-            console.log("메시지 받음! 원본:", event.data?.substring(0, 100));
+            console.log("메시지 받음! 원본:", event.data);
 
             try {
                 const data = JSON.parse(event.data);
