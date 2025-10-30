@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from "react-router-dom";
-import { useRealtimeSession } from "@/hooks/useRealtimeSession.js";
+import React, {useEffect, useRef, useState} from 'react';
+import {useLocation, useNavigate} from "react-router-dom";
+import {useRealtimeSession} from "@/hooks/useRealtimeSession.js";
 import useSessionStore from "@/stores/sessionStore.js";
+import apiClient from "@/services/apiClient.js";
 import styles from "./DialoguePage.module.scss";
-import toast from "react-hot-toast";
-import { FiMic, FiMicOff, FiX } from "react-icons/fi";
+import {FiMic, FiMicOff, FiX} from "react-icons/fi";
 
 const DialoguePage = () => {
 
@@ -47,36 +47,52 @@ const DialoguePage = () => {
         if (!scenarioId) {
             setPageStatus('blocked');
             setBlockReason('시나리오 정보가 없습니다.');
-
             console.log('시나리오 정보가 없습니다.');
             return;
         }
 
-        // 세션 상태 확인
-        const existingSession = getExistingSession(scenarioId, userId);
-        if (existingSession) {
-            const status = existingSession.status;
-
-            if (status === 'completed') {
-                setPageStatus('blocked');
-                setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
-            } else if (status === 'abandoned') {
-                setPageStatus('blocked');
-                setBlockReason('종료된 대화입니다.\n새로 시작하려면 페이지를 새로고침해주세요.');
-            } else if (status === 'ongoing') {
-                // ongoing 상태는 세션 복구로 재시도 허용
-                console.log('진행 중인 세션을 복구합니다.');
-                setPageStatus('connecting');
-            } else if (status === 'failed') {
-                // failed 상태는 재시도 허용
-                console.log('이전 연결이 실패했습니다. 다시 시도합니다.');
-                setPageStatus('connecting');
+        const checkSession = async () => {
+            // 1. 로컬 세션 확인 (빠른 초기 체크)
+            const localSession = getExistingSession(scenarioId, userId);
+            
+            // 2. 로컬에 세션이 있으면 백엔드에서 실제 상태 확인
+            if (localSession?.sessionId) {
+                try {
+                    console.log('백엔드 세션 상태 확인:', localSession.sessionId);
+                    const response = await apiClient.get(`/sessions/${localSession.sessionId}`);
+                    const backendSession = response.data.data;
+                    
+                    console.log('백엔드 세션 상태:', backendSession.status);
+                    
+                    // 백엔드 상태로 최종 결정
+                    if (backendSession.status === 'COMPLETED') {
+                        setPageStatus('blocked');
+                        setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
+                    } else if (backendSession.status === 'ABANDONED') {
+                        setPageStatus('blocked');
+                        setBlockReason('종료된 대화입니다.\n새로 시작하려면 페이지를 새로고침해주세요.');
+                    } else if (backendSession.status === 'ONGOING') {
+                        console.log('진행 중인 세션을 복구합니다.');
+                        setPageStatus('connecting');
+                    } else if (backendSession.status === 'FAILED') {
+                        console.log('이전 연결이 실패했습니다. 다시 시도합니다.');
+                        setPageStatus('connecting');
+                    } else {
+                        setPageStatus('connecting');
+                    }
+                } catch (error) {
+                    console.log('백엔드 세션 조회 실패, 새 세션 시작 가능:', error);
+                    // 세션이 없거나 조회 실패 시 새로 시작 가능
+                    setPageStatus('connecting');
+                }
             } else {
+                // 로컬에 세션이 없으면 새로 시작
+                console.log('로컬 세션 없음, 새 세션 시작');
                 setPageStatus('connecting');
             }
-        } else {
-            setPageStatus('connecting');
-        }
+        };
+
+        checkSession();
     }, [scenarioId, userId, getExistingSession, navigate]);
 
     // 연결 시작 (pageStatus가 'connecting'일 때만)
