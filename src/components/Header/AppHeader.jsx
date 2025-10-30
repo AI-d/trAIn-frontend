@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import styles from '../../../../../Downloads/AppHeader.module.scss';
+import styles from './AppHeader.module.scss';
 
 /**
  * 공통 헤더 컴포넌트
