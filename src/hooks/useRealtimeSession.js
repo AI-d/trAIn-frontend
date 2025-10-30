@@ -583,9 +583,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         let silenceCount = 0;
 
-        // 첫 인사는 더 관대한 설정 (음성 끊김 방지)
-        const SILENCE_THRESHOLD = isInitialGreeting ? 3 : 5;  // 첫 인사는 덜 민감하게
-        const SILENCE_CHECKS = isInitialGreeting ? 10 : 5;    // 첫 인사는 더 오래 기다리기 (2초)
+        // 모든 대화에서 더 관대한 설정 (음성 끊김 방지)
+        const SILENCE_THRESHOLD = isInitialGreeting ? 2 : 3;  // 전체적으로 덜 민감하게
+        const SILENCE_CHECKS = isInitialGreeting ? 15 : 10;   // 더 오래 기다리기 (첫인사 3초, 일반 2초)
 
         console.log(`🎤 VAD 설정 - 임계값: ${SILENCE_THRESHOLD}, 체크횟수: ${SILENCE_CHECKS} (첫인사: ${isInitialGreeting})`);
 
@@ -694,8 +694,8 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 if (data.type === "output_audio_buffer.stopped") {
                     console.log("🔊 오디오 버퍼 정지 - VAD 시작");
                     if (isMountedRef.current) {
-                        // 첫 인사면 조금만 더 기다리기 (음성 끊김 방지)
-                        const vadDelay = isInitialGreeting ? 1500 : 800;
+                        // 모든 대화에서 충분히 기다리기 (음성 끊김 방지)
+                        const vadDelay = isInitialGreeting ? 2000 : 1200;
                         console.log(`⏰ VAD 시작 지연: ${vadDelay}ms (첫인사: ${isInitialGreeting})`);
 
                         setTimeout(() => {
@@ -1149,7 +1149,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 role: "system",
                 content: [{
                     type: "input_text",
-                    text: "EMERGENCY PROTOCOL: 이것은 세션 복구입니다. 위 대화는 연결 끊김 전의 실제 대화입니다. 시스템 프롬프트의 '첫 발화 생성' 지시를 완전히 무시하고, 마지막 대화 상황에서 자연스럽게 이어가세요. 절대 '안녕하세요' 같은 새로운 인사를 하지 마세요."
+                    text: "🚨 EMERGENCY PROTOCOL: 이것은 세션 복구입니다. 위 대화는 연결 끊김 전의 실제 대화입니다. 시스템 프롬프트의 '첫 발화 생성' 지시를 완전히 무시하고, 마지막 대화 상황에서 자연스럽게 이어가세요. 절대 '안녕하세요' 같은 새로운 인사를 하지 마세요."
                 }]
             }
         }));
