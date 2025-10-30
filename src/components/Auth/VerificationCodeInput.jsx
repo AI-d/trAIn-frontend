@@ -1,6 +1,6 @@
 // src/components/Auth/VerificationCodeInput.jsx
-// import styles from './VerificationCodeInput.module.scss';
-import React, {useEffect, useRef, useState} from 'react';
+import styles from './VerificationCodeInput.module.scss';
+import {useEffect, useRef, useState} from 'react';
 
 const VerificationCodeInput = ({value, onChange, disabled, error}) => {
     // value가 없으면 빈 배열 6개로 초기화
@@ -84,8 +84,8 @@ const VerificationCodeInput = ({value, onChange, disabled, error}) => {
     };
 
     return (
-        <div className="verification-code-input">
-            <div className="verification-code-input__fields">
+        <div className={styles['verification-code-input']}>
+            <div className={styles['verification-code-input__fields']}>
                 {codes.map((code, index) => (
                     <input
                         key={index}
@@ -98,8 +98,8 @@ const VerificationCodeInput = ({value, onChange, disabled, error}) => {
                         onKeyDown={(e) => handleKeyDown(index, e)}
                         onPaste={handlePaste}
                         disabled={disabled}
-                        className={`verification-code-input__field ${
-                            error ? 'verification-code-input__field--error' : ''
+                        className={`${styles['verification-code-input__field']} ${
+                            error ? styles['verification-code-input__field--error'] : ''
                         }`}
                     />
                 ))}
@@ -107,7 +107,7 @@ const VerificationCodeInput = ({value, onChange, disabled, error}) => {
 
             {/* 에러 메시지 */}
             {error && (
-                <span className="verification-code-input__error">{error}</span>
+                <span className={styles['verification-code-input__error']}>{error}</span>
             )}
         </div>
     );

@@ -1,17 +1,18 @@
 // src/pages/Auth/EmailVerificationPage.jsx
-// import styles from './EmailVerificationPage.module.scss';
-import React, {useEffect, useState} from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
+import styles from './EmailVerificationPage.module.scss';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import * as authService from '@/services/authService';
 import VerificationCodeInput from '@/components/Auth/VerificationCodeInput';
 import ErrorMessage from '@/components/common/ErrorMessage';
-import {getErrorMessage, validateVerificationCode} from '@/utils/validation';
+import { getErrorMessage, validateVerificationCode } from '@/utils/validation';
+import AuthLogo from '@/components/common/AuthLogo';
 
 const EmailVerificationPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const {email, emailVerificationToken: initialToken} = location.state || {};
+    const { email, emailVerificationToken: initialToken } = location.state || {};
 
     const [verificationCode, setVerificationCode] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +25,7 @@ const EmailVerificationPage = () => {
     // 이메일 또는 토큰 없으면 회원가입 페이지로 리디렉트
     useEffect(() => {
         if (!email || !emailVerificationToken) {
-            navigate('/signup', {replace: true});
+            navigate('/signup', { replace: true });
         }
     }, [email, emailVerificationToken, navigate]);
 
@@ -82,7 +83,7 @@ const EmailVerificationPage = () => {
             } else if (errorCode === 'VERIFY_002') {
                 setError('인증 세션이 만료되었습니다. 다시 회원가입해주세요.');
                 setTimeout(() => {
-                    navigate('/signup', {replace: true});
+                    navigate('/signup', { replace: true });
                 }, 2000);
             } else {
                 setError(errorData?.detail || errorData?.message || '이메일 인증에 실패했습니다.');
@@ -121,19 +122,22 @@ const EmailVerificationPage = () => {
     };
 
     return (
-        <div className="email-verification-page">
-            <div className="email-verification-page__container">
+        <div className={styles['email-verification-page']}>
+            <div className={styles['email-verification-page__container']}>
+                {/* 로고 */}
+                <AuthLogo />
+
                 {/* 타이틀 */}
-                <div className="email-verification-page__header">
-                    <h1 className="email-verification-page__title">이메일 인증</h1>
-                    <p className="email-verification-page__subtitle">
-                        <strong>{email}</strong>로 전송된<br/>
+                <div className={styles['email-verification-page__header']}>
+                    <h1 className={styles['email-verification-page__title']}>이메일 인증</h1>
+                    <p className={styles['email-verification-page__subtitle']}>
+                        <strong>{email}</strong>로 전송된<br />
                         6자리 인증 코드를 입력해주세요.
                     </p>
                 </div>
 
                 {/* 인증 코드 입력 */}
-                <div className="email-verification-page__input">
+                <div className={styles['email-verification-page__input']}>
                     <VerificationCodeInput
                         value={verificationCode}
                         onChange={handleCodeChange}
@@ -144,16 +148,16 @@ const EmailVerificationPage = () => {
 
                 {/* 에러 메시지 */}
                 {error && (
-                    <div className="email-verification-page__error">
-                        <ErrorMessage message={error} type="error"/>
+                    <div className={styles['email-verification-page__error']}>
+                        <ErrorMessage message={error} type="error" />
                     </div>
                 )}
 
                 {/* 안내 메시지 */}
-                <div className="email-verification-page__info">
+                <div className={styles['email-verification-page__info']}>
                     <p>이메일이 오지 않았나요?</p>
                     <button
-                        className="email-verification-page__resend-button"
+                        className={styles['email-verification-page__resend-button']}
                         onClick={handleResend}
                         disabled={resendCooldown > 0 || isSubmitting}
                     >
@@ -165,7 +169,7 @@ const EmailVerificationPage = () => {
 
                 {/* 인증 버튼 */}
                 <button
-                    className="email-verification-page__submit-button"
+                    className={styles['email-verification-page__submit-button']}
                     onClick={handleSubmit}
                     disabled={verificationCode.length !== 6 || isSubmitting}
                 >

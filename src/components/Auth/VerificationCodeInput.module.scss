@@ -1,0 +1,69 @@
+/* src/components/Auth/VerificationCodeInput.module.scss */
+
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$primary-blue: #5B7FDB;
+$accent-red: #EF4444;
+$soft-white: #F8F9FB;
+
+.verification-code-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.verification-code-input__fields {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.verification-code-input__field {
+  width: 48px;
+  height: 56px;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  color: $deep-navy;
+  background-color: $soft-white;
+  border: 2px solid $border-gray;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-blue;
+    box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.verification-code-input__field--error {
+  border-color: $accent-red;
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba($accent-red, 0.1);
+  }
+}
+
+.verification-code-input__error {
+  font-size: 13px;
+  color: $accent-red;
+  text-align: center;
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .verification-code-input__field {
+    color: #E5E7EB;
+    background-color: #1F2937;
+    border-color: #4B5563;
+  }
+}
