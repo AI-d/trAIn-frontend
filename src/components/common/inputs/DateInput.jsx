@@ -1,5 +1,5 @@
 // src/components/common/inputs/DateInput.jsx
-// import styles from './DateInput.module.scss';
+import styles from './DateInput.module.scss';
 import React from 'react';
 
 /**
@@ -27,12 +27,12 @@ const DateInput = ({
                        max,
                    }) => {
     return (
-        <div className="date-input">
+        <div className={styles['date-input']}>
             {/* 라벨 */}
             {label && (
-                <label htmlFor={name} className="date-input__label">
+                <label htmlFor={name} className={styles['date-input__label']}>
                     {label}
-                    {required && <span className="date-input__required">*</span>}
+                    {required && <span className={styles['date-input__required']}>*</span>}
                 </label>
             )}
 
@@ -47,12 +47,12 @@ const DateInput = ({
                 disabled={disabled}
                 min={min}
                 max={max}
-                className={`date-input__field ${error ? 'date-input__field--error' : ''}`}
+                className={`${styles['date-input__field']} ${error ? styles['date-input__field--error'] : ''}`}
             />
 
             {/* 에러 메시지 */}
             {error && (
-                <span className="date-input__error">{error}</span>
+                <span className={styles['date-input__error']}>{error}</span>
             )}
         </div>
     );

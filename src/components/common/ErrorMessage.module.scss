@@ -1,0 +1,116 @@
+/* src/components/common/ErrorMessage.module.scss */
+
+/* --- 로컬 변수 (V3 아키텍처) --- */
+$primary-blue: #5B7FDB;
+$accent-red: #EF4444;
+$accent-amber: #F59E0B;
+$warm-gray: #6B7280;
+$radius-md: 12px;
+
+/* --- 접근성: 공용 포커스 링 --- */
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+/* --- 모션 민감 사용자 지원 --- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: $radius-md;
+  width: 100%;
+
+  // --- Variants ---
+  &--error {
+    background-color: rgba($accent-red, 0.05);
+    color: $accent-red;
+  }
+
+  &--warning {
+    background-color: rgba($accent-amber, 0.05);
+    color: $accent-amber;
+  }
+
+  &--info {
+    background-color: rgba($primary-blue, 0.05);
+    color: $primary-blue;
+  }
+}
+
+.error-message__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  // SVG의 stroke/fill이 "currentColor"를 상속
+}
+
+.error-message__text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4; // 아이콘과 높이 맞춤
+}
+
+.error-message__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 2px 0 0 8px; // 위치 미세 조정
+  border-radius: 50%;
+  cursor: pointer;
+  color: $warm-gray;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    color: $warm-gray; // 색상 유지
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  svg {
+    display: block; // 버튼 내 svg 정렬
+  }
+}
+
+/* --- 다크 모드 --- */
+@media (prefers-color-scheme: dark) {
+  .error-message {
+    // 다크모드에서는 배경/색상 대비가 더 강해야 함
+    &--error {
+      background-color: rgba($accent-red, 0.15);
+      color: #F87171; // 밝은 빨강
+    }
+
+    &--warning {
+      background-color: rgba($accent-amber, 0.15);
+      color: #FBBF24; // 밝은 노랑
+    }
+
+    &--info {
+      background-color: rgba($primary-blue, 0.15);
+      color: #818CF8; // 밝은 파랑
+    }
+  }
+
+  .error-message__close {
+    color: #9CA3AF;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+}

@@ -1,0 +1,136 @@
+/* src/components/common/Modal/ModalContent/TermsContent.module.scss */
+
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$primary-blue: #5B7FDB;
+$border-gray: #D1D5DB;
+
+.terms-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.terms-content__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: $deep-navy;
+}
+
+.terms-content__body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: $warm-gray;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+
+  // HTML 태그 스타일
+  h1, h2, h3, h4, h5, h6 {
+    margin: 16px 0 8px 0;
+    font-weight: 700;
+    color: $deep-navy;
+  }
+
+  h1 { font-size: 20px; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; }
+  h4, h5, h6 { font-size: 14px; }
+
+  p {
+    margin: 8px 0;
+  }
+
+  ul, ol {
+    margin: 8px 0;
+    padding-left: 24px;
+  }
+
+  li {
+    margin: 4px 0;
+  }
+
+  strong, b {
+    font-weight: 700;
+    color: $deep-navy;
+  }
+
+  em, i {
+    font-style: italic;
+  }
+
+  code {
+    background-color: rgba($primary-blue, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+  }
+
+  pre {
+    background-color: rgba($primary-blue, 0.05);
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 12px 0;
+
+    code {
+      background: none;
+      padding: 0;
+    }
+  }
+
+  a {
+    color: $primary-blue;
+    text-decoration: underline;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  blockquote {
+    border-left: 3px solid $primary-blue;
+    padding-left: 12px;
+    margin: 12px 0;
+    color: $warm-gray;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid $border-gray;
+    margin: 16px 0;
+  }
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .terms-content__title {
+    color: #E5E7EB;
+  }
+
+  .terms-content__body {
+    color: #9CA3AF;
+
+    h1, h2, h3, h4, h5, h6 {
+      color: #E5E7EB;
+    }
+
+    strong, b {
+      color: #E5E7EB;
+    }
+
+    code {
+      background-color: rgba(91, 127, 219, 0.2);
+    }
+
+    pre {
+      background-color: rgba(91, 127, 219, 0.1);
+    }
+
+    hr {
+      border-top-color: #4B5563;
+    }
+  }
+}

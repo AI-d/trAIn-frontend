@@ -1,5 +1,5 @@
 // src/components/Auth/signup/terms/AgreeAllCheckbox.jsx
-// import styles from './AgreeAllCheckbox.module.scss';
+import styles from './AgreeAllCheckbox.module.scss';
 import React from 'react';
 
 /**
@@ -10,20 +10,20 @@ import React from 'react';
  */
 const AgreeAllCheckbox = ({allAgreed, onToggleAll}) => {
     return (
-        <div className="agree-all-checkbox">
-            <label className="agree-all-checkbox__label">
+        <div className={styles['agree-all-checkbox']}>
+            <label className={styles['agree-all-checkbox__label']}>
                 {/* 전체 동의 체크박스 */}
                 <input
                     type="checkbox"
-                    className="agree-all-checkbox__checkbox"
+                    className={styles['agree-all-checkbox__checkbox']}
                     checked={allAgreed}
                     onChange={(e) => onToggleAll(e.target.checked)}
                 />
 
                 {/* 전체 동의 텍스트 */}
-                <span className="agree-all-checkbox__text">
-          전체 동의
-        </span>
+                <span className={styles['agree-all-checkbox__text']}>
+                    전체 동의
+                </span>
             </label>
         </div>
     );

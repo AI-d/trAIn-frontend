@@ -1,5 +1,5 @@
 // src/components/common/inputs/Select.jsx
-// import styles from './Select.module.scss';
+import styles from './Select.module.scss';
 import React from 'react';
 
 /**
@@ -27,17 +27,17 @@ const Select = ({
                     disabled = false,
                 }) => {
     return (
-        <div className="select">
+        <div className={styles['select']}>
             {/* 라벨 */}
             {label && (
-                <label htmlFor={name} className="select__label">
+                <label htmlFor={name} className={styles['select__label']}>
                     {label}
-                    {required && <span className="select__required">*</span>}
+                    {required && <span className={styles['select__required']}>*</span>}
                 </label>
             )}
 
             {/* 선택 필드 */}
-            <div className="select__wrapper">
+            <div className={styles['select__wrapper']}>
                 <select
                     id={name}
                     name={name}
@@ -45,7 +45,7 @@ const Select = ({
                     onChange={onChange}
                     required={required}
                     disabled={disabled}
-                    className={`select__field ${error ? 'select__field--error' : ''}`}
+                    className={`${styles['select__field']} ${error ? styles['select__field--error'] : ''}`}
                 >
                     {/* 기본 옵션 (placeholder) */}
                     <option value="" disabled>
@@ -62,7 +62,7 @@ const Select = ({
 
                 {/* 화살표 아이콘 */}
                 <svg
-                    className="select__icon"
+                    className={styles['select__icon']}
                     width="20"
                     height="20"
                     viewBox="0 0 20 20"
@@ -81,7 +81,7 @@ const Select = ({
 
             {/* 에러 메시지 */}
             {error && (
-                <span className="select__error">{error}</span>
+                <span className={styles['select__error']}>{error}</span>
             )}
         </div>
     );

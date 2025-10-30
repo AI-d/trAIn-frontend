@@ -1,0 +1,41 @@
+/* src/components/Auth/signup/terms/TermsList.module.scss */
+
+$border-gray: #D1D5DB;
+$warm-gray: #6B7280;
+
+.terms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.terms-list__loading,
+.terms-list__error {
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: $warm-gray;
+}
+
+.terms-list__divider {
+  height: 1px;
+  background-color: $border-gray;
+  margin: 8px 0;
+}
+
+.terms-list__items {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .terms-list__divider {
+    background-color: #4B5563;
+  }
+
+  .terms-list__loading,
+  .terms-list__error {
+    color: #9CA3AF;
+  }
+}

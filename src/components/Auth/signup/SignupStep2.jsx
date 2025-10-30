@@ -1,11 +1,11 @@
 // src/components/Auth/signup/SignupStep2.jsx
-// import styles from './SignupStep2.module.scss';
-import React, {useState} from 'react';
+import styles from './SignupStep2.module.scss';
+import React, { useState } from 'react';
 import TextInput from '@/components/common/inputs/TextInput';
 import PasswordInput from '@/components/common/inputs/PasswordInput';
 import DateInput from '@/components/common/inputs/DateInput';
 import Select from '@/components/common/inputs/Select';
-import {getErrorMessage, JOB_TYPE_OPTIONS,} from '@/utils/validation';
+import { getErrorMessage, JOB_TYPE_OPTIONS, } from '@/utils/validation';
 
 /**
  * 로컬 회원가입 Step 2 - 정보 입력
@@ -16,18 +16,18 @@ import {getErrorMessage, JOB_TYPE_OPTIONS,} from '@/utils/validation';
  * @param {function} onSubmit - 제출 핸들러
  * @param {boolean} isSubmitting - 제출 중 여부
  */
-const SignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitting}) => {
+const SignupStep2 = ({ formData, onFormChange, onPrev, onSubmit, isSubmitting }) => {
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
 
     // 입력 변경
     const handleChange = (e) => {
-        const {name, value} = e.target;
-        onFormChange({...formData, [name]: value});
+        const { name, value } = e.target;
+        onFormChange({ ...formData, [name]: value });
 
         // jobType이 OTHER가 아니면 jobDetail 초기화
         if (name === 'jobType' && value !== 'OTHER') {
-            onFormChange({...formData, [name]: value, jobDetail: ''});
+            onFormChange({ ...formData, [name]: value, jobDetail: '' });
         }
 
         // 실시간 검증
@@ -38,7 +38,7 @@ const SignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitting}) =
 
     // 필드 블러
     const handleBlur = (name) => {
-        setTouched({...touched, [name]: true});
+        setTouched({ ...touched, [name]: true });
         validateField(name, formData[name]);
     };
 
@@ -74,7 +74,7 @@ const SignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitting}) =
                 break;
         }
 
-        setErrors({...errors, [name]: error});
+        setErrors({ ...errors, [name]: error });
         return error === '';
     };
 
@@ -118,17 +118,17 @@ const SignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitting}) =
     };
 
     return (
-        <div className="signup-step2">
+        <div className={styles['signup-step2']}>
             {/* 타이틀 */}
-            <div className="signup-step2__header">
-                <h2 className="signup-step2__title">회원 정보 입력</h2>
-                <p className="signup-step2__subtitle">
-                    회원가입을 위한 정보를 입력해주세요.
+            <div className={styles['signup-step2__header']}>
+                <h2 className={styles['signup-step2__title']}>정보 입력</h2>
+                <p className={styles['signup-step2__subtitle']}>
+                    서비스 이용을 위해 정보를 입력해주세요.
                 </p>
             </div>
 
             {/* 폼 */}
-            <form className="signup-step2__form" onSubmit={handleSubmit}>
+            <form className={styles['signup-step2__form']} onSubmit={handleSubmit}>
                 {/* 이메일 */}
                 <TextInput
                     name="email"
@@ -218,10 +218,10 @@ const SignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitting}) =
                 )}
 
                 {/* 버튼 */}
-                <div className="signup-step2__actions">
+                <div className={styles['signup-step2__actions']}>
                     <button
                         type="button"
-                        className="signup-step2__prev-button"
+                        className={styles['signup-step2__prev-button']}
                         onClick={onPrev}
                         disabled={isSubmitting}
                     >
@@ -230,7 +230,7 @@ const SignupStep2 = ({formData, onFormChange, onPrev, onSubmit, isSubmitting}) =
 
                     <button
                         type="submit"
-                        className="signup-step2__submit-button"
+                        className={styles['signup-step2__submit-button']}
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? '가입 중...' : '이메일 인증'}

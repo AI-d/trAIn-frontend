@@ -1,5 +1,5 @@
 // src/components/common/inputs/TextInput.jsx
-// import styles from './TextInput.module.scss';
+import styles from './TextInput.module.scss';
 import React from 'react';
 
 /**
@@ -29,12 +29,12 @@ const TextInput = ({
                        disabled = false,
                    }) => {
     return (
-        <div className="text-input">
+        <div className={styles['text-input']}>
             {/* 라벨 */}
             {label && (
-                <label htmlFor={name} className="text-input__label">
+                <label htmlFor={name} className={styles['text-input__label']}>
                     {label}
-                    {required && <span className="text-input__required">*</span>}
+                    {required && <span className={styles['text-input__required']}>*</span>}
                 </label>
             )}
 
@@ -49,12 +49,12 @@ const TextInput = ({
                 required={required}
                 readOnly={readOnly}
                 disabled={disabled}
-                className={`text-input__field ${error ? 'text-input__field--error' : ''} ${readOnly ? 'text-input__field--readonly' : ''}`}
+                className={`${styles['text-input__field']} ${error ? styles['text-input__field--error'] : ''} ${readOnly ? styles['text-input__field--readonly'] : ''}`}
             />
 
             {/* 에러 메시지 */}
             {error && (
-                <span className="text-input__error">{error}</span>
+                <span className={styles['text-input__error']}>{error}</span>
             )}
         </div>
     );

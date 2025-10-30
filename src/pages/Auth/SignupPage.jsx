@@ -1,13 +1,13 @@
 // src/pages/Auth/SignupPage.jsx
-// import styles from './SignupPage.module.scss';
-import React, {useState} from 'react';
+import styles from './SignupPage.module.scss';
+import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import * as authService from '@/services/authService';
-import SignupNavigation from '@/components/Auth/SignupNavigation';
 import SignupStep1 from '@/components/Auth/signup/SignupStep1';
 import SignupStep2 from '@/components/Auth/signup/SignupStep2';
 import LoadingOverlay from '@/components/common/LoadingOverlay';
 import ErrorMessage from '@/components/common/ErrorMessage';
+import AuthLogo from '@/components/common/AuthLogo';
 
 /**
  * 로컬 회원가입 페이지
@@ -97,22 +97,39 @@ const SignupPage = () => {
     };
 
     return (
-        <div className="signup-page">
-            <div className="signup-page__container">
+        <div className={styles['signup-page']}>
+            <div className={styles['signup-page__container']}>
+                {/* 로고 */}
+                <AuthLogo />
+
                 {/* 타이틀 */}
-                <div className="signup-page__header">
-                    <h1 className="signup-page__title">회원가입</h1>
-                    <p className="signup-page__subtitle">
+                <div className={styles['signup-page__header']}>
+                    <h1 className={styles['signup-page__title']}>회원가입</h1>
+                    <p className={styles['signup-page__subtitle']}>
                         Dialogym과 함께 대화 실력을 향상시켜보세요.
                     </p>
                 </div>
 
                 {/* 단계 네비게이션 */}
-                <SignupNavigation currentStep={currentStep}/>
+                <div className={styles['signup-page__progress']}>
+                    <div
+                        className={`${styles['signup-page__step']} ${currentStep === 1 ? styles['active'] : ''}`}
+                    >
+                        <span className={styles['signup-page__step-number']}>1</span>
+                        <span className={styles['signup-page__step-label']}>약관 동의</span>
+                    </div>
+                    <div className={styles['signup-page__step-divider']}/>
+                    <div
+                        className={`${styles['signup-page__step']} ${currentStep === 2 ? styles['active'] : ''}`}
+                    >
+                        <span className={styles['signup-page__step-number']}>2</span>
+                        <span className={styles['signup-page__step-label']}>정보 입력</span>
+                    </div>
+                </div>
 
                 {/* 에러 메시지 */}
                 {error && (
-                    <div className="signup-page__error">
+                    <div className={styles['signup-page__error']}>
                         <ErrorMessage message={error} type="error"/>
                     </div>
                 )}

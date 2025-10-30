@@ -1,5 +1,5 @@
 // src/components/common/Modal/Modal.jsx
-// import styles from './Modal.module.scss';
+import styles from './Modal.module.scss';
 import React from 'react';
 import TermsContent from './ModalContent/TermsContent';
 import LoadingContent from './ModalContent/LoadingContent';
@@ -46,17 +46,14 @@ const Modal = ({ isOpen, type, data, onClose, onSubmit, onNext }) => {
     };
 
     return (
-        <div className="modal-overlay" onClick={handleOverlayClick}>
-            <div className={`modal-content ${type === 'feedbackDetail' ? 'modal-content--wide' : ''}`}>
+        <div className={styles.overlay} onClick={handleOverlayClick}>
+            <div className={`${styles.panel} ${type === 'feedbackDetail' ? styles.panelWide : ''}`}>
                 {/* 닫기 버튼 (loading 타입은 표시 안 함) */}
                 {type !== 'loading' && (
-                    <button className="modal-close" onClick={onClose}>
-                        ×
-                    </button>
+                    <button type="button" className={styles.close} onClick={onClose}>×</button>
                 )}
-
                 {/* Content 영역 */}
-                <div className="modal-body">
+                <div className={styles.body}>
                     {renderContent()}
                 </div>
             </div>

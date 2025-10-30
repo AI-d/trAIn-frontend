@@ -1,5 +1,5 @@
 // src/components/Auth/signup/terms/TermsList.jsx
-// import styles from './TermsList.module.scss';
+import styles from './TermsList.module.scss';
 import React, {useEffect, useState} from 'react';
 import AgreeAllCheckbox from './AgreeAllCheckbox';
 import TermsItem from './TermsItem';
@@ -43,6 +43,7 @@ const TermsList = ({consents, onConsentsChange, onViewDetail}) => {
                     termsId: term.termsId,
                     version: term.version,
                     agreed: false,
+                    required: term.required, // 필수 여부 추가
                 }));
                 onConsentsChange(initialConsents);
             } catch (err) {
@@ -80,7 +81,7 @@ const TermsList = ({consents, onConsentsChange, onViewDetail}) => {
 
     if (loading) {
         return (
-            <div className="terms-list__loading">
+            <div className={styles['terms-list__loading']}>
                 약관을 불러오는 중...
             </div>
         );
@@ -88,14 +89,14 @@ const TermsList = ({consents, onConsentsChange, onViewDetail}) => {
 
     if (error) {
         return (
-            <div className="terms-list__error">
+            <div className={styles['terms-list__error']}>
                 {error}
             </div>
         );
     }
 
     return (
-        <div className="terms-list">
+        <div className={styles['terms-list']}>
             {/* 전체 동의 */}
             <AgreeAllCheckbox
                 allAgreed={allAgreed}
@@ -103,10 +104,10 @@ const TermsList = ({consents, onConsentsChange, onViewDetail}) => {
             />
 
             {/* 구분선 */}
-            <div className="terms-list__divider"/>
+            <div className={styles['terms-list__divider']}/>
 
             {/* 개별 약관 목록 (정렬된 순서대로) */}
-            <div className="terms-list__items">
+            <div className={styles['terms-list__items']}>
                 {terms.map(term => {
                     const consent = consents.find(c => c.termsId === term.termsId);
                     return (
