@@ -1,0 +1,92 @@
+/* src/components/common/inputs/Select.module.scss */
+
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$primary-blue: #5B7FDB;
+$accent-red: #EF4444;
+$soft-white: #F8F9FB;
+
+.select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.select__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: $deep-navy;
+}
+
+.select__required {
+  color: $accent-red;
+  margin-left: 2px;
+}
+
+.select__wrapper {
+  position: relative;
+}
+
+.select__field {
+  width: 100%;
+  padding: 12px 40px 12px 14px;
+  font-size: 14px;
+  color: $deep-navy;
+  background-color: $soft-white;
+  border: 1px solid $border-gray;
+  border-radius: 8px;
+  appearance: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-blue;
+    box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.select__field--error {
+  border-color: $accent-red;
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba($accent-red, 0.1);
+  }
+}
+
+.select__icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: $warm-gray;
+}
+
+.select__error {
+  font-size: 13px;
+  color: $accent-red;
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .select__label {
+    color: #E5E7EB;
+  }
+
+  .select__field {
+    color: #E5E7EB;
+    background-color: #1F2937;
+    border-color: #4B5563;
+  }
+
+  .select__icon {
+    color: #9CA3AF;
+  }
+}

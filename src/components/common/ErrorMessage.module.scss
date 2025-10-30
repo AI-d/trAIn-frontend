@@ -1,0 +1,53 @@
+// src/components/common/ErrorMessage.module.scss
+
+.message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 12px 0;
+
+  &--error {
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+  }
+
+  &--warning {
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
+    color: #92400E;
+  }
+
+  &--info {
+    background: #DBEAFE;
+    border: 1px solid #93C5FD;
+    color: #1E40AF;
+  }
+
+  &__text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .message {
+    &--error {
+      background: #7F1D1D;
+      border-color: #991B1B;
+      color: #FCA5A5;
+    }
+
+    &--warning {
+      background: #78350F;
+      border-color: #92400E;
+      color: #FCD34D;
+    }
+
+    &--info {
+      background: #1E3A8A;
+      border-color: #1E40AF;
+      color: #93C5FD;
+    }
+  }
+}

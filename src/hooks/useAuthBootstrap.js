@@ -1,35 +1,33 @@
 // src/hooks/useAuthBootstrap.js
-
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 import {useAuthStore} from '@/stores/authStore';
 
 /**
- * @fileoverview 앱 최초 진입 시:
- *  - ?code= 존재 → 교환 → URL 정리
- *  - 아니면 RT→AT 초기화 시도
+ * 앱 최초 진입 시 인증 상태 초기화
  */
 export function useAuthBootstrap() {
-    const exchangeCode = useAuthStore((s) => s.exchangeCode);
-    const initializeAuth = useAuthStore((s) => s.initializeAuth);
+    const initializeAuth = useAuthStore((state) => state.initializeAuth);
+
+    // 한 번만 실행되도록 ref 사용
+    const hasInitialized = useRef(false);
 
     useEffect(() => {
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get('code');
+        // 이미 실행했으면 스킵
+        if (hasInitialized.current) {
+            return;
+        }
 
-        (async () => {
+        hasInitialized.current = true;
+
+        const bootstrap = async () => {
             try {
-                if (code) {
-                    await exchangeCode(code);
-                    // URL에서 code 제거
-                    url.searchParams.delete('code');
-                    const cleanUrl = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : '');
-                    window.history.replaceState({}, '', cleanUrl);
-                } else {
-                    await initializeAuth();
-                }
-            } catch {
-                // 무시: store가 unauthenticated로 알아서 정리
+                await initializeAuth();
+            } catch (error) {
+                console.error('[useAuthBootstrap] 인증 초기화 실패:', error);
+                // 401 에러는 무시 (로그인 안 된 상태)
             }
-        })();
-    }, [exchangeCode, initializeAuth]);
+        };
+
+        bootstrap();
+    }, []); // 빈 배열로 한 번만 실행
 }

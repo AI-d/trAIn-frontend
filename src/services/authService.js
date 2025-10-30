@@ -1,7 +1,7 @@
 // src/services/authService.js
 
 import apiClient from '@/services/apiClient';
-import {unwrap} from '@/services/normalize';
+import {unwrap} from '@/utils/normalize';
 
 /**
  * @fileoverview 인증 관련 API 모듈
@@ -63,7 +63,7 @@ export async function verifyEmail(payload) {
  */
 export async function resendVerificationEmail(email) {
     const {data} = await apiClient.post('/verification/email/resend', {email});
-    return unwrap(data).message; // "인증 이메일이 재발송되었습니다."
+    return unwrap(data).data; // { success, message, emailVerificationToken }
 }
 
 /**

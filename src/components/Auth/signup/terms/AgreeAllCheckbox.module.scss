@@ -1,0 +1,36 @@
+/* src/components/Auth/signup/terms/AgreeAllCheckbox.module.scss */
+
+$deep-navy: #2C3E5D;
+$primary-blue: #5B7FDB;
+
+.agree-all-checkbox {
+  padding: 12px 0;
+}
+
+.agree-all-checkbox__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: $deep-navy;
+}
+
+.agree-all-checkbox__checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: $primary-blue;
+}
+
+.agree-all-checkbox__text {
+  user-select: none;
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .agree-all-checkbox__label {
+    color: #E5E7EB;
+  }
+}

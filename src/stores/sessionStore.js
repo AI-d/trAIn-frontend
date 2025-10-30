@@ -34,7 +34,7 @@ const useSessionStore = create(
                         ...state.sessions,
                         [key]: {
                             sessionId,
-                            status: 'ongoing',
+                            status: 'in_progress',
                             scenarioId,
                             userId,
                             createdAt: now,
@@ -54,7 +54,7 @@ const useSessionStore = create(
                         ...state.sessions,
                         [key]: {
                             ...state.sessions[key],
-                            status: 'ongoing',
+                            status: 'in_progress',
                             lastActivity: now
                         }
                     }
@@ -108,7 +108,7 @@ const useSessionStore = create(
 
             // 세션 진행 중 여부 확인
             isSessionInProgress: (scenarioId, userId) => {
-                return get().getSessionStatus(scenarioId, userId) === 'ongoing';
+                return get().getSessionStatus(scenarioId, userId) === 'in_progress';
             },
 
             // 활동 시간 업데이트

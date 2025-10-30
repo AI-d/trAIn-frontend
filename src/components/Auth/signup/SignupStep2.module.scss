@@ -1,0 +1,143 @@
+/* src/components/Auth/signup/SignupStep2.module.scss */
+
+/* --- 로컬 변수 --- */
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$primary-blue-light: #6B8EE8;
+$primary-blue: #5B7FDB;
+$radius-md: 12px;
+
+/* 다크 모드 색상 */
+$dark-text-primary: #E5E7EB;
+$dark-text-secondary: #9CA3AF;
+$dark-bg-secondary: #1F2937;
+$dark-border-color: #4B5563;
+
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- 컴포넌트 스타일 --- */
+.signup-step2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.signup-step2__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.signup-step2__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: $deep-navy;
+}
+
+.signup-step2__subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: $warm-gray;
+}
+
+.signup-step2__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.signup-step2__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.signup-step2__prev-button {
+  flex: 1;
+  border-radius: $radius-md;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #fff;
+  color: $primary-blue;
+  border: 1.5px solid $primary-blue;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba($primary-blue, 0.05);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.signup-step2__submit-button {
+  flex: 2;
+  border-radius: $radius-md;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  background: $primary-blue;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: $primary-blue-light;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* --- 다크 모드 --- */
+@media (prefers-color-scheme: dark) {
+  .signup-step2__title {
+    color: $dark-text-primary;
+  }
+
+  .signup-step2__subtitle {
+    color: $dark-text-secondary;
+  }
+
+  .signup-step2__prev-button {
+    background: $dark-bg-secondary;
+    color: $primary-blue;
+    border-color: $primary-blue;
+
+    &:hover:not(:disabled) {
+      background: rgba($primary-blue, 0.15);
+    }
+  }
+}

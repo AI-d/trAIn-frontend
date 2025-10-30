@@ -1,0 +1,112 @@
+/* src/components/Auth/signup/SignupStep1.module.scss */
+
+/* --- 1. 인라인 변수 및 믹스인 --- */
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$primary-blue-light: #6B8EE8;
+$primary-blue: #5B7FDB;
+$radius-md: 12px;
+
+// 다크 모드 색상
+$dark-text-primary: #E5E7EB;
+$dark-text-secondary: #9CA3AF;
+$dark-border-color: #4B5563;
+
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+/* --- 2. 컴포넌트 스타일 (V4 UI 밀도) --- */
+.signup-step1 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.signup-step1__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.signup-step1__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: $deep-navy;
+}
+.signup-step1__subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: $warm-gray;
+}
+
+.signup-step1__content {
+  border: 1px solid $border-gray;
+  border-radius: $radius-md;
+  padding: 12px;
+  max-height: 40svh;
+  overflow: auto;
+}
+
+.signup-step1__error {
+  margin: 4px 0;
+}
+
+.signup-step1__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.signup-step1__next-button {
+  width: 100%;
+  border-radius: $radius-md;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  background: $primary-blue;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: $primary-blue-light;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* --- 다크 모드 (Inlined) --- */
+@media (prefers-color-scheme: dark) {
+  .signup-step1__title {
+    color: $dark-text-primary;
+  }
+  .signup-step1__subtitle {
+    color: $dark-text-secondary;
+  }
+  .signup-step1__content {
+    border-color: $dark-border-color;
+  }
+}

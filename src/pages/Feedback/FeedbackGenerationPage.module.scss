@@ -1,0 +1,78 @@
+/* src/pages/Feedback/FeedbackGenerationPage.module.scss */
+
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$primary-blue: #5B7FDB;
+$primary-blue-light: #6B8EE8;
+
+.feedback-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: $soft-white;
+  border-left: 1px solid $border-gray;
+  border-right: 1px solid $border-gray;
+}
+
+.feedback-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 20px;
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: $deep-navy;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: $warm-gray;
+  }
+
+  button {
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    background: $primary-blue;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: $primary-blue-light;
+    }
+  }
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .feedback-page {
+    background-color: #12161F;
+    border-left-color: #374151;
+    border-right-color: #374151;
+  }
+
+  .feedback-page__error {
+    h2 {
+      color: #E5E7EB;
+    }
+
+    p {
+      color: #9CA3AF;
+    }
+  }
+}

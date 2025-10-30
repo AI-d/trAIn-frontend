@@ -1,0 +1,115 @@
+// src/components/User/feedback/FeedbackHistory.module.scss
+
+.feedback-history {
+  &__header {
+    margin-bottom: 20px;
+  }
+
+  &__title {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2C3E5D;
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: #6B7280;
+  }
+
+  &__error {
+    margin: 16px 0;
+  }
+
+  &__list {
+    margin: 16px 0;
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+
+    p {
+      margin: 8px 0;
+      color: #6B7280;
+
+      &:first-child {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2C3E5D;
+      }
+    }
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+    padding: 16px;
+  }
+
+  &__page-button {
+    padding: 8px 16px;
+    background: #6B8EE8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: #5B7FDB;
+    }
+
+    &:disabled {
+      background: #D1D5DB;
+      cursor: not-allowed;
+    }
+  }
+
+  &__page-info {
+    font-size: 14px;
+    color: #6B7280;
+    font-weight: 500;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .feedback-history {
+    &__title {
+      color: #E5E7EB;
+    }
+
+    &__subtitle,
+    &__page-info {
+      color: #9CA3AF;
+    }
+
+    &__empty {
+      background: #1F2937;
+      border-color: #374151;
+
+      p {
+        color: #9CA3AF;
+
+        &:first-child {
+          color: #E5E7EB;
+        }
+      }
+    }
+
+    &__page-button {
+      &:disabled {
+        background: #4B5563;
+      }
+    }
+  }
+}

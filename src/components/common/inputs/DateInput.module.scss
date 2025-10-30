@@ -1,0 +1,85 @@
+/* src/components/common/inputs/DateInput.module.scss */
+
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$primary-blue: #5B7FDB;
+$accent-red: #EF4444;
+$soft-white: #F8F9FB;
+
+.date-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.date-input__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: $deep-navy;
+}
+
+.date-input__required {
+  color: $accent-red;
+  margin-left: 2px;
+}
+
+.date-input__field {
+  padding: 12px 40px 12px 14px;
+  font-size: 14px;
+  color: $deep-navy;
+  background-color: $soft-white;
+  border: 1px solid $border-gray;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    position: absolute;
+    right: 14px;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $primary-blue;
+    box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.date-input__field--error {
+  border-color: $accent-red;
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba($accent-red, 0.1);
+  }
+}
+
+.date-input__error {
+  font-size: 13px;
+  color: $accent-red;
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .date-input__label {
+    color: #E5E7EB;
+  }
+
+  .date-input__field {
+    color: #E5E7EB;
+    background-color: #1F2937;
+    border-color: #4B5563;
+  }
+}

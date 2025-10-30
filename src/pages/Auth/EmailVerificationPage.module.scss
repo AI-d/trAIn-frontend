@@ -1,0 +1,185 @@
+/* src/pages/Auth/EmailVerificationPage.module.scss */
+
+/* --- 로컬 변수 --- */
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+$deep-navy: #2C3E5D;
+$primary-blue: #5B7FDB;
+$primary-blue-light: #6B8EE8;
+$warm-gray: #6B7280;
+$radius-md: 12px;
+
+/* --- 접근성: 공용 포커스 링 --- */
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+/* --- 모션 민감 사용자 지원 --- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- 1. 페이지 셸 --- */
+.email-verification-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: $soft-white;
+  border-left: 1px solid $border-gray;
+  border-right: 1px solid $border-gray;
+}
+
+/* --- 2. 내부 컨테이너 --- */
+.email-verification-page__container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 24px;
+}
+
+/* --- 3. 헤더 --- */
+.email-verification-page__header {
+  width: 100%;
+  text-align: center;
+}
+
+.email-verification-page__title {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: $deep-navy;
+}
+
+.email-verification-page__subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $warm-gray;
+
+  strong {
+    color: $deep-navy;
+    font-weight: 600;
+  }
+}
+
+/* --- 4. 인증 코드 입력 영역 --- */
+.email-verification-page__input {
+  width: 100%;
+}
+
+/* --- 5. 에러 메시지 --- */
+.email-verification-page__error {
+  width: 100%;
+}
+
+/* --- 6. 안내 메시지 --- */
+.email-verification-page__info {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: $warm-gray;
+  }
+}
+
+.email-verification-page__resend-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: $primary-blue;
+  background: transparent;
+  border: 1.5px solid $primary-blue;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba($primary-blue, 0.05);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* --- 7. 인증 버튼 --- */
+.email-verification-page__submit-button {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: $primary-blue;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: $primary-blue-light;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* --- 8. 다크 모드 --- */
+@media (prefers-color-scheme: dark) {
+  .email-verification-page {
+    background-color: #12161F;
+    border-left-color: #374151;
+    border-right-color: #374151;
+  }
+
+  .email-verification-page__title {
+    color: #E5E7EB;
+  }
+
+  .email-verification-page__subtitle {
+    color: #9CA3AF;
+
+    strong {
+      color: #E5E7EB;
+    }
+  }
+
+  .email-verification-page__info p {
+    color: #9CA3AF;
+  }
+
+  .email-verification-page__resend-button {
+    color: $primary-blue;
+    border-color: $primary-blue;
+    background: #1F2937;
+
+    &:hover:not(:disabled) {
+      background: rgba($primary-blue, 0.15);
+    }
+  }
+}

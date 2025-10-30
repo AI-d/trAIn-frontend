@@ -21,13 +21,14 @@ const DialoguePage = () => {
 
     // 세션 상태 관리
     const { getExistingSession } = useSessionStore();
-
+    
     // 페이지 상태 관리
     const [pageStatus, setPageStatus] = useState('checking'); // 'checking' | 'blocked' | 'connecting'
     const [blockReason, setBlockReason] = useState('');
 
     // 리액트 커스텀 훅
     const {
+        sessionId: currentSessionId,
         connected,
         wsConnected,
         transcripts,
@@ -47,8 +48,12 @@ const DialoguePage = () => {
         if (!scenarioId) {
             setPageStatus('blocked');
             setBlockReason('시나리오 정보가 없습니다.');
+            
+            toast.error('시나리오 정보가 없습니다.\n시나리오 화면으로 이동합니다.', {
+                duration: 2000,
+            });
 
-            console.log('시나리오 정보가 없습니다.');
+            setTimeout(() => navigate('/'), 2000);
             return;
         }
 
@@ -56,21 +61,16 @@ const DialoguePage = () => {
         const existingSession = getExistingSession(scenarioId, userId);
         if (existingSession) {
             const status = existingSession.status;
-
+            
             if (status === 'completed') {
                 setPageStatus('blocked');
                 setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
             } else if (status === 'abandoned') {
                 setPageStatus('blocked');
                 setBlockReason('종료된 대화입니다.\n새로 시작하려면 페이지를 새로고침해주세요.');
-            } else if (status === 'ongoing') {
-                // ongoing 상태는 세션 복구로 재시도 허용
-                console.log('진행 중인 세션을 복구합니다.');
-                setPageStatus('connecting');
-            } else if (status === 'failed') {
-                // failed 상태는 재시도 허용
-                console.log('이전 연결이 실패했습니다. 다시 시도합니다.');
-                setPageStatus('connecting');
+            } else if (status === 'in_progress') {
+                setPageStatus('blocked');
+                setBlockReason('이미 진행 중인 시나리오입니다.\n완료 후 다시 시도해주세요.');
             } else {
                 setPageStatus('connecting');
             }
@@ -87,30 +87,24 @@ const DialoguePage = () => {
 
         console.log('🚀 대화 페이지 진입 - 연결 시작:', scenarioId);
 
-        console.log('연결 시작...');
+        const connectingToast = toast.loading('연결 중...');
 
         initRealtimeConnection()
             .then(() => {
                 if (!isCancelled) {
-                    console.log('✅ 연결 성공');
+                    toast.success('연결되었습니다!', { id: connectingToast });
                 }
             })
             .catch((error) => {
                 if (!isCancelled) {
-                    let errorMessage = '연결에 실패했습니다.\n다시 시도해주세요.';
+                    toast.error('연결에 실패했습니다.\n다시 시도해주세요.', { id: connectingToast, duration: 3000 });
+                    console.error('❌ 연결 실패:', error);
 
-                    // 마이크 권한 관련 에러 처리
-                    if (error.message.includes('마이크') || error.message.includes('Permission denied')) {
-                        // 마이크 권한 거부 시 특별 처리 - 홈으로 이동하지 않음
-                        setPageStatus('blocked');
-                        setBlockReason('마이크 권한이 필요합니다.\n브라우저에서 마이크 권한을 허용하고 새로고침해주세요.');
-                    } else {
-                        // 다른 에러는 기존 처리
-                        console.error('연결 실패:', errorMessage);
-                        console.error('❌ 연결 실패:', error);
-                    }
-
-
+                    setTimeout(() => {
+                        if (!isCancelled) {
+                            navigate('/');
+                        }
+                    }, 3000);
                 }
             });
 
@@ -122,8 +116,8 @@ const DialoguePage = () => {
     // 차단된 페이지 자동 이동
     useEffect(() => {
         if (pageStatus === 'blocked') {
-            console.log('페이지 차단:', blockReason);
-            // 자동 이동 제거 - 사용자가 버튼으로 직접 이동
+            toast.error(blockReason, { duration: 3000 });
+            setTimeout(() => navigate('/'), 3000);
         }
     }, [pageStatus, blockReason, navigate]);
 
@@ -143,14 +137,18 @@ const DialoguePage = () => {
 
         if (!confirmed) return;
 
-        console.log('대화 종료 중...');
+        const endingToast = toast.loading('대화를 종료하는 중...');
 
         try {
             await handleEndSession(false); // 중단으로 처리
-            console.log('✅ 대화가 중단되었습니다');
-            navigate('/');
+            toast.success('대화가 중단되었습니다!', { id: endingToast });
+
+            setTimeout(() => {
+                navigate('/');
+            }, 1000);
         } catch (error) {
-            console.error('❌ 대화 종료 실패:', error);
+            toast.error('대화 종료 중 오류가 발생했습니다.', { id: endingToast });
+            console.error('❌ 세션 종료 실패:', error);
         }
     };
 
@@ -160,19 +158,19 @@ const DialoguePage = () => {
 
         if (!confirmed) return;
 
-        console.log('대화 완료 중...');
+        const endingToast = toast.loading('대화를 완료하는 중...');
 
         try {
             await handleEndSession(true); // 완료로 처리
-            console.log('✅ 대화 연습이 완료되었습니다');
-            navigate('/', {
-                state: {
-                    completed: true,
-                    sessionData: { transcripts, scenarioId }
-                }
-            });
+            toast.success('대화 연습이 완료되었습니다!', { id: endingToast });
+
+            // 피드백 페이지로 이동
+            setTimeout(() => {
+                navigate(`/feedback/${currentSessionId}`);
+            }, 1000);
         } catch (error) {
-            console.error('❌ 대화 완료 실패:', error);
+            toast.error('대화 완료 중 오류가 발생했습니다.', { id: endingToast });
+            console.error('❌ 세션 완료 실패:', error);
         }
     };
 
@@ -210,7 +208,7 @@ const DialoguePage = () => {
                     <div className={styles.blockedContent}>
                         <h2 className={styles.blockedTitle}></h2>
                         <p className={styles.blockedMessage}>{blockReason}</p>
-                        <button
+                        <button 
                             className={styles.goBackButton}
                             onClick={() => navigate('/')}
                         >
@@ -283,10 +281,10 @@ const DialoguePage = () => {
                         <div
                             key={index}
                             className={`${styles.messageWrapper} ${transcript.speaker === 'user' ? styles.userMessage : styles.aiMessage
-                                }`}
+                            }`}
                         >
                             <div className={`${styles.messageBubble} ${transcript.isTemp ? styles.tempBubble : ''
-                                }`}>
+                            }`}>
                                 <p className={styles.messageText}>
                                     {transcript.text}
                                     {transcript.isTemp && <span className={styles.cursor}></span>}
@@ -342,8 +340,9 @@ const DialoguePage = () => {
 
                     {/* 마이크 버튼 */}
                     <button
-                        className={`${styles.micButton} ${isPttActive ? styles.recording : ''
-                            } ${aiSpeaking || isInitialGreeting || !connected ? styles.disabled : ''}`}
+                        className={`${styles.micButton} ${
+                            isPttActive ? styles.recording : ''
+                        } ${aiSpeaking || isInitialGreeting || !connected ? styles.disabled : ''}`}
                         onClick={handleUserToggle}
                         disabled={!connected || aiSpeaking || isInitialGreeting || loading}
                     >
