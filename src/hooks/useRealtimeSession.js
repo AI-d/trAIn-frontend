@@ -217,8 +217,11 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 targetSessionId = sessionResponse.data.data.sessionId;
             }
 
+            setSessionId(targetSessionId);
+
+            // 3. Ephemeral Key 발급 (재개 시에도 새로 발급)
             const ephemeralResponse = await apiClient.post('/realtime/session', {
-                sessionId: newSessionId,
+                sessionId: targetSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01",
                 voice: "alloy",
                 sttModel: "whisper-1",
@@ -1120,18 +1123,15 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
         // 1. 컨텍스트 전송 (텍스트 + 빈 오디오)
         currentTranscripts.forEach((transcript, index) => {
-            const content = [{
-                type: "input_text",
-                text: transcript.text
-            }];
-
             // 사용자 메시지에는 빈 오디오 추가 (맥락 이해 향상)
-            if (transcript.speaker === 'user') {
-                content.push({
-                    type: "input_audio",
-                    audio: "" // 빈 오디오 버퍼
-                });
-            }
+            const content = transcript.speaker === 'user'
+                ? [
+                    { type: "input_text", text: transcript.text },
+                    { type: "input_audio", audio: "" }
+                ]
+                : [
+                    { type: "input_text", text: transcript.text }
+                ];
 
             dataChannelRef.current.send(JSON.stringify({
                 type: "conversation.item.create",
