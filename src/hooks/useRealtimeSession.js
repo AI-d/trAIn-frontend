@@ -236,6 +236,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
             const ephemeralKey = ephemeralResponse.data.data.client_secret.value;
             console.log('Ephemeral Key 발급 완료');
+            console.log(`gpt 세션: ${ephemeralResponse.data.data.id}`);
 
             if (!isMountedRef.current) return;
 
@@ -648,17 +649,29 @@ export const useRealtimeSession = (scenarioId, userId) => {
             if (!isMountedRef.current) return;
 
             console.log("✅ Data Channel 열림");
-            setIsInitialGreeting(true);
             setConnected(true);
 
-            // AI가 먼저 인사하도록 response.create 전송
-            if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
-                dataChannelRef.current.send(JSON.stringify({
-                    type: "response.create",
-                    response: {
-                        modalities: ["audio", "text"]
-                    }
-                }));
+            // 기존 세션이 있는지 확인
+            const existingSession = getExistingSession(scenarioId, userId);
+            const hasExistingTranscripts = transcriptsRef.current && transcriptsRef.current.length > 0;
+
+            // 새 세션이거나 대화 내역이 없을 때만 첫 인사 모드
+            if (!existingSession || !hasExistingTranscripts) {
+                console.log("🎙️ 새 세션 - 첫 인사 모드 설정");
+                setIsInitialGreeting(true);
+
+                // AI가 먼저 인사하도록 response.create 전송
+                if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+                    dataChannelRef.current.send(JSON.stringify({
+                        type: "response.create",
+                        response: {
+                            modalities: ["audio", "text"]
+                        }
+                    }));
+                }
+            } else {
+                console.log("🔄 세션 복구 - 첫 인사 건너뛰기");
+                setIsInitialGreeting(false);
             }
         };
 
@@ -1118,24 +1131,34 @@ export const useRealtimeSession = (scenarioId, userId) => {
     }, []);
 
     /**
-     * 재연결 시 AI에게 전체 컨텍스트 제공
+     * 재연결 시 AI에게 전체 컨텍스트 제공 (빈 오디오 포함)
      */
     const sendRecoveryContext = useCallback(() => {
 
         const currentTranscripts = transcriptsRef.current?.filter(t => !t.isTemp) || [];
 
-        // 1. 컨텍스트 전송
+        // 1. 컨텍스트 전송 (텍스트 + 빈 오디오)
         currentTranscripts.forEach((transcript, index) => {
+            const content = [{
+                type: "input_text",
+                text: transcript.text
+            }];
+
+            // 사용자 메시지에는 빈 오디오 추가 (맥락 이해 향상)
+            if (transcript.speaker === 'user') {
+                content.push({
+                    type: "input_audio",
+                    audio: "" // 빈 오디오 버퍼
+                });
+            }
+
             dataChannelRef.current.send(JSON.stringify({
                 type: "conversation.item.create",
                 item: {
                     id: `recovery_${Date.now()}_${index}`,
                     type: "message",
                     role: transcript.speaker === 'user' ? 'user' : 'assistant',
-                    content: [{
-                        type: "input_text",
-                        text: transcript.text
-                    }]
+                    content: content
                 }
             }));
         });
@@ -1154,7 +1177,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
             }
         }));
 
-        console.log(`세션 복구: 전체 ${currentTranscripts.length}개 대화 컨텍스트 전송 + 인사 금지 지시`);
+        console.log(`세션 복구: 전체 ${currentTranscripts.length}개 대화 컨텍스트 전송 (빈 오디오 포함) + 인사 금지 지시`);
         return true;
 
     }, []);
