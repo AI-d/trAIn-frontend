@@ -74,8 +74,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
         resumeSession,
         completeSession,
         abandonSession,
+        failSession,
         isSessionCompleted,
         isSessionInProgress,
+        isSessionFailed,
         updateLastActivity,
     } = useSessionStore();
 
@@ -152,21 +154,22 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const initRealtimeConnection = useCallback(async () => {
         if (!isMountedRef.current) return;
 
-        // 1. 기존 세션 존재 여부 확인 (모든 상태 차단)
+        // 1. 기존 세션 존재 여부 확인
         const existingSession = getExistingSession(scenarioId, userId);
         if (existingSession) {
             const status = existingSession.status;
             if (status === 'completed') {
-                console.log('완료된 시나리오입니다.');
-                throw new Error('완료된 시나리오입니다.');
-                // 시나리오 재시작 비즈니스 로직 필요함
+                console.log('이미 완료된 시나리오입니다.');
+                throw new Error('이미 완료된 시나리오입니다.');
             } else if (status === 'abandoned') {
                 console.log('중단된 시나리오입니다. 새로 시작해주세요.');
                 throw new Error('중단된 시나리오입니다. 새로 시작해주세요.');
-                // 시나리오 재시작 비즈니스 로직 필요함
-            } else if (status === 'in_progress') {
-                console.log('이미 진행 중인 시나리오입니다.');
-                throw new Error('이미 진행 중인 시나리오입니다.');
+            } else if (status === 'ongoing') {
+                console.log('진행 중인 대화를 복구합니다.');
+                // ongoing 상태는 세션 복구로 재시도 허용 - 계속 진행
+            } else if (status === 'failed') {
+                console.log('이전 연결이 실패했습니다. 다시 시도합니다.');
+                // failed 상태는 재시도 허용 - 계속 진행
             }
         }
 
@@ -174,13 +177,45 @@ export const useRealtimeSession = (scenarioId, userId) => {
         setIsInitialGreeting(true);
 
         try {
-            // 2. 새 세션 생성 (기존 세션은 위에서 이미 차단됨)
-            console.log('새 세션 생성');
-            const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId });
-            if (!isMountedRef.current) return;
+            let targetSessionId;
+            let isResuming = false;
 
-            const targetSessionId = sessionResponse.data.data.sessionId;
-            startSession(targetSessionId, scenarioId, userId);
+            // 2. 세션 생성 또는 복구
+            if (existingSession && (existingSession.status === 'ongoing' || existingSession.status === 'failed')) {
+                // 기존 세션이 있으면 백엔드 상태 확인
+                console.log('기존 세션 상태 확인:', existingSession.sessionId);
+
+                try {
+                    const sessionCheckResponse = await apiClient.get(`/sessions/${existingSession.sessionId}`);
+                    const backendStatus = sessionCheckResponse.data.data.status;
+
+                    if (backendStatus === 'ONGOING') {
+                        // 백엔드에서도 ongoing이면 세션 복구
+                        console.log('백엔드 세션 복구 가능:', existingSession.sessionId);
+                        targetSessionId = existingSession.sessionId;
+                        isResuming = true;
+                    } else {
+                        // 백엔드에서 completed면 새 세션 생성
+                        console.log('백엔드 세션 완료됨, 새 세션 생성');
+                        const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId });
+                        if (!isMountedRef.current) return;
+                        targetSessionId = sessionResponse.data.data.sessionId;
+                    }
+                } catch (error) {
+                    // 세션 조회 실패 시 새 세션 생성
+                    console.log('세션 조회 실패, 새 세션 생성:', error);
+                    const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId });
+                    if (!isMountedRef.current) return;
+                    targetSessionId = sessionResponse.data.data.sessionId;
+                }
+            } else {
+                // 새 세션 생성
+                console.log('새 세션 생성');
+                const sessionResponse = await apiClient.post('/sessions', { scenarioId, userId });
+                if (!isMountedRef.current) return;
+
+                targetSessionId = sessionResponse.data.data.sessionId;
+            }
 
             setSessionId(targetSessionId);
 
@@ -204,16 +239,33 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
             if (!isMountedRef.current) return;
 
-            // 4. WebSocket 연결 (항상 새 세션)
-            await initWebSocket(targetSessionId, false);
+            // 4. WebSocket 연결 (복구 여부 전달)
+            await initWebSocket(targetSessionId, isResuming);
             if (!isMountedRef.current) return;
 
             // 5. WebRTC 연결
-            await initWebRtc(ephemeralKey, targetSessionId);
+            await initWebRtc(ephemeralKey, targetSessionId, scenarioId, userId);
+
+            // 6. WebRTC 연결 성공 후 세션 상태를 ongoing로 설정
+            startSession(targetSessionId, scenarioId, userId);
+            console.log('세션 시작됨:', targetSessionId);
 
         } catch (err) {
             console.error("Realtime 연결 실패:", err);
             if (isMountedRef.current) {
+                // 연결 실패 시 세션을 failed 상태로 변경
+                let errorMessage = err.message;
+
+                // 마이크 권한 관련 에러 메시지 개선
+                if (err.message.includes('마이크') || err.message.includes('getUserMedia') || err.message.includes('Permission denied')) {
+                    errorMessage = '마이크 권한이 필요합니다. 브라우저에서 마이크 권한을 허용해주세요.';
+                }
+
+                try {
+                    failSession(scenarioId, userId, errorMessage);
+                } catch (sessionError) {
+                    console.error('failSession 호출 실패:', sessionError);
+                }
                 await cleanupConnection();
                 setLoading(false);
             }
@@ -223,7 +275,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 setLoading(false);
             }
         }
-    }, [userId, scenarioId, getExistingSession, startSession])
+    }, [userId, scenarioId, getExistingSession, startSession, failSession])
 
     /**
      * webSocket 연결 초기화
@@ -349,15 +401,26 @@ export const useRealtimeSession = (scenarioId, userId) => {
             return;
         }
 
+        let recovered = {};
         if (message.transcripts && message.transcripts.length > 0) {
-            const recovered = message.transcripts.map(item => ({
+            recovered = message.transcripts.map(item => ({
                 speaker: item.speaker.toLowerCase(),
-                text: item.text,
+                text: item.content,
                 timestamp: item.timestamp
             }));
 
             setTranscripts(recovered);
             console.log(`대화 내역 복구 완료: ${recovered.length} 개 메세지`);
+
+            // AI 에게 컨텍스트 제공
+            const hasUserText = recovered.some(item => item.speaker === 'user');
+            if(hasUserText) {
+                const contextSend = sendRecoveryContext();
+                if(contextSend) {
+                    console.log("복구된 전체 대화 AI에게 전송완료");
+                }
+            }
+
         } else {
             console.log("복구할 대화 내역 없음");
         }
@@ -378,6 +441,26 @@ export const useRealtimeSession = (scenarioId, userId) => {
         }, delay);
 
     }, [initWebSocket]);
+
+    /**
+     * 전체 세션 재연결 (WebRTC + WebSocket)
+     */
+    const attemptFullReconnect = useCallback((reason) => {
+        console.log(`🔄 전체 재연결 시도: ${reason}`);
+        console.log(`연결이 끊어졌습니다. 재연결을 시도합니다...`);
+
+        setTimeout(() => {
+            if (isMountedRef.current) {
+                // 마이크 연결 끊김은 대화 중이므로 failed 처리하지 않음 (ongoing 유지)
+                // WebRTC 연결 끊김은 초기 연결 문제일 수 있으므로 failed 처리
+                if (reason.includes('WebRTC') || reason.includes('초기')) {
+                    failSession(scenarioId, userId, reason);
+                }
+                // 마이크 연결 끊김은 세션 상태 유지하면서 재연결만 시도
+                window.location.reload();
+            }
+        }, 3000);
+    }, [failSession, scenarioId, userId]);
 
     /**
      * 백엔드로 대화 내용 전송
@@ -458,7 +541,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
     /**
      * webRtc 연결 초기화
      */
-    const initWebRtc = async (ephemeralKey, sessionId) => {
+    const initWebRtc = useCallback(async (ephemeralKey, sessionId, scenarioId, userId) => {
         if (!isMountedRef.current) {
             throw new Error('Component unmounted');
         }
@@ -511,12 +594,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         setAiSpeaking(true);
                         aiSpeakingStartRef.current = Date.now();
 
-                        // 발화 시작과 동시에 VAD 시작 (지연 후)
-                        setTimeout(() => {
-                            if (isMountedRef.current && aiSpeaking) {
-                                startAiVadCheck();
-                            }
-                        }, 2000); // 2초 후 VAD 시작
+                        // 첫 인사가 아닐 때만 VAD 시작
+                        if (!isInitialGreeting) {
+                            setTimeout(() => {
+                                if (isMountedRef.current && aiSpeaking) {
+                                    startAiVadCheck();
+                                }
+                            }, 2000);
+                        }
                     }
                 }
 
@@ -678,6 +763,25 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 track.enabled = false;
                 pcRef.current.addTrack(track, localStream);
                 console.log("마이크 초기 상태: 비활성화");
+
+                // 미디어 트랙 상태 모니터링
+                track.onended = () => {
+                    console.log("🎤 마이크 트랙 종료됨");
+                    if (isMountedRef.current) {
+                        console.log('마이크 연결이 끊어졌습니다. 재연결을 시도합니다...');
+
+                        // 마이크 재연결 시도
+                        attemptFullReconnect('마이크 연결 끊김');
+                    }
+                };
+
+                track.onmute = () => {
+                    console.log("🔇 마이크 음소거됨");
+                };
+
+                track.onunmute = () => {
+                    console.log("🎤 마이크 음소거 해제됨");
+                };
             });
 
 
@@ -738,9 +842,25 @@ export const useRealtimeSession = (scenarioId, userId) => {
         pcRef.current.onconnectionstatechange = () => {
             if (!isMountedRef.current) return;
             console.log("연결 상태:", pcRef.current.connectionState);
-            if (pcRef.current.connectionState === 'disconnected' || pcRef.current.connectionState === 'failed') {
-                console.log("WebRTC 연결 실패 - 세션 종료");
-                handleEndSession();
+
+            if (pcRef.current.connectionState === 'disconnected') {
+                console.log("🔌 WebRTC 연결 끊김 - 재연결 시도");
+                // 연결 끊김 시 사용자에게 알림
+                console.log('연결이 끊어졌습니다. 재연결을 시도합니다...');
+
+                // WebRTC 재연결 시도
+                attemptFullReconnect('WebRTC 연결 끊김');
+
+            } else if (pcRef.current.connectionState === 'failed') {
+                console.log("❌ WebRTC 연결 완전 실패");
+                console.log('연결에 실패했습니다. 페이지를 새로고침해주세요.');
+                failSession(scenarioId, userId, 'WebRTC 연결 실패');
+
+            } else if (pcRef.current.connectionState === 'connected') {
+                console.log("✅ WebRTC 연결 성공");
+
+            } else if (pcRef.current.connectionState === 'connecting') {
+                console.log("🔄 WebRTC 연결 중...");
             }
         };
 
@@ -777,7 +897,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         const answerSdp = await sdpResponse.text();
         await pcRef.current.setRemoteDescription({ type: "answer", sdp: answerSdp });
         console.log("WebRtc 연결됨");
-    };
+    }, [failSession]);
 
     /**
      * 마이크 트랙 제어
@@ -895,6 +1015,33 @@ export const useRealtimeSession = (scenarioId, userId) => {
             console.log("❌ 오디오 전송 실패: ", err);
             setVadStatus('idle');
         }
+
+    }, []);
+
+    /**
+     * 재연결 시 AI에게 전체 컨텍스트 제공
+     */
+    const sendRecoveryContext = useCallback(() => {
+
+        const currentTranscripts = transcriptsRef.current?.filter(t => !t.isTemp) || [];
+
+        currentTranscripts.forEach((transcript, index) => {
+            dataChannelRef.current.send(JSON.stringify({
+                type: "conversation.item.create",
+                item: {
+                    id: `recovery_${Date.now()}_${index}`,
+                    type: "message",
+                    role: transcript.speaker === 'user' ? 'user' : 'assistant',
+                    content: [{
+                        type: "input_text", // GPT Realtime는 모두 input_text 사용
+                        text: transcript.text
+                    }]
+                }
+            }));
+        });
+
+        console.log(`세션 복구: 전체 ${currentTranscripts.length}개 대화 컨텍스트 전송`);
+        return true;
 
     }, []);
 
