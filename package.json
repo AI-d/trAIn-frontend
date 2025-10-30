@@ -21,11 +21,14 @@
     "openai": "^4.104.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.4",
     "sass": "^1.92.1",
     "scss": "^0.2.4",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "zustand-persist": "^0.4.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.1",
