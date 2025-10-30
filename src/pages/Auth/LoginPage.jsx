@@ -1,11 +1,12 @@
 // src/pages/Auth/LoginPage.jsx
-// import styles from './LoginPage.module.scss';
-import React, {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {useAuthStore} from '@/stores/authStore';
+import styles from './LoginPage.module.scss';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import LoginForm from '@/components/Auth/LoginForm';
 import SocialButtonGroup from '@/components/Auth/SocialButtonGroup';
-import {API_BASE_URL} from '@/services/apiClient';
+import { API_BASE_URL } from '@/services/apiClient';
+import AuthLogo from '@/components/common/AuthLogo';
 
 /**
  * 로그인 페이지
@@ -26,7 +27,7 @@ const LoginPage = () => {
             await login(credentials);
 
             // 성공 → 홈으로 이동
-            navigate('/home', {replace: true});
+            navigate('/home', { replace: true });
 
         } catch (err) {
             console.error('로그인 실패:', err);
@@ -43,18 +44,21 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="login-page">
-            <div className="login-page__container">
+        <div className={styles['login-page']}>
+            <div className={styles['login-page__container']}>
+                {/* 로고 */}
+                <AuthLogo />
+
                 {/* 타이틀 */}
-                <div className="login-page__header">
-                    <h1 className="login-page__title">로그인</h1>
-                    <p className="login-page__subtitle">
+                <div className={styles['login-page__header']}>
+                    <h1 className={styles['login-page__title']}>로그인</h1>
+                    <p className={styles['login-page__subtitle']}>
                         Dialogym에 오신 것을 환영합니다.
                     </p>
                 </div>
 
                 {/* 로컬 로그인 폼 */}
-                <div className="login-page__form">
+                <div className={styles['login-page__form']}>
                     <LoginForm
                         onSubmit={handleSubmit}
                         isSubmitting={isSubmitting}
@@ -63,13 +67,13 @@ const LoginPage = () => {
                 </div>
 
                 {/* 구분선 */}
-                <div className="login-page__divider">
-                    <span className="login-page__divider-text">또는</span>
+                <div className={styles['login-page__divider']}>
+                    <span className={styles['login-page__divider-text']}>또는</span>
                 </div>
 
                 {/* 소셜 로그인 */}
-                <div className="login-page__social">
-                    <SocialButtonGroup onSocialLogin={handleSocialLogin}/>
+                <div className={styles['login-page__social']}>
+                    <SocialButtonGroup onSocialLogin={handleSocialLogin} />
                 </div>
             </div>
         </div>

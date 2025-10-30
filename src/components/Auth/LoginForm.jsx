@@ -1,6 +1,6 @@
 // src/components/Auth/LoginForm.jsx
-// import styles from './LoginForm.module.scss';
-import React, {useState} from 'react';
+import styles from './LoginForm.module.scss';
+import {useState} from 'react';
 import TextInput from '@/components/common/inputs/TextInput';
 import PasswordInput from '@/components/common/inputs/PasswordInput';
 import ErrorMessage from '@/components/common/ErrorMessage';
@@ -86,7 +86,7 @@ const LoginForm = ({onSubmit, isSubmitting, error}) => {
     };
 
     return (
-        <form className="login-form" onSubmit={handleSubmit}>
+        <form className={styles['login-form']} onSubmit={handleSubmit}>
             {/* 이메일 */}
             <TextInput
                 name="email"
@@ -114,7 +114,7 @@ const LoginForm = ({onSubmit, isSubmitting, error}) => {
 
             {/* 서버 에러 메시지 */}
             {error && (
-                <div className="login-form__error">
+                <div className={styles['login-form__error']}>
                     <ErrorMessage message={error} type="error"/>
                 </div>
             )}
@@ -122,16 +122,16 @@ const LoginForm = ({onSubmit, isSubmitting, error}) => {
             {/* 로그인 버튼 */}
             <button
                 type="submit"
-                className="login-form__submit-button"
+                className={styles['login-form__submit-button']}
                 disabled={isSubmitting}
             >
                 {isSubmitting ? '로그인 중...' : '로그인'}
             </button>
 
             {/* 회원가입 링크 */}
-            <div className="login-form__signup-link">
+            <div className={styles['login-form__signup-link']}>
                 <span>계정이 없으신가요?</span>
-                <a href="/signup" className="login-form__link">
+                <a href="/signup" className={styles['login-form__link']}>
                     회원가입
                 </a>
             </div>
