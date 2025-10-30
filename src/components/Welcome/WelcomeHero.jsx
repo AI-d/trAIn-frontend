@@ -1,6 +1,6 @@
 // src/components/Welcome/WelcomeHero.jsx
 import styles from './WelcomeHero.module.scss';
-import React from 'react';
+import logoSymbol from '@/assets/Dialogym_logo_symbol_bg_removal.png';
 
 /**
  * Welcome 페이지 메인 히어로 섹션
@@ -11,7 +11,11 @@ const WelcomeHero = () => {
         <section className={`${styles['welcome-hero']} welcome-hero`}>
             {/* 로고 아이콘 */}
             <div className={`${styles['welcome-hero__logo']} welcome-hero__logo`}>
-                <div className={`${styles['welcome-hero__logo-icon']} welcome-hero__logo-icon`}>D</div>
+                <img 
+                    src={logoSymbol} 
+                    alt="Dialogym Logo" 
+                    className={`${styles['welcome-hero__logo-icon']} welcome-hero__logo-icon`}
+                />
             </div>
 
             {/* 타이틀 */}

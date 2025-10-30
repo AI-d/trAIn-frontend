@@ -1,9 +1,9 @@
 // src/pages/Welcome/WelcomePage.jsx
 import styles from './WelcomePage.module.scss';
-import React from 'react';
-import {useNavigate} from 'react-router-dom';
-import {useAuthStore} from '@/stores/authStore';
-import {API_BASE_URL} from '@/services/apiClient';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
+import { API_BASE_URL } from '@/services/apiClient';
 import WelcomeHeader from '@/components/Welcome/WelcomeHeader';
 import WelcomeHero from '@/components/Welcome/WelcomeHero';
 import EmailLoginButton from '@/components/Auth/EmailLoginButton';
@@ -12,6 +12,15 @@ import WelcomeFooter from '@/components/Welcome/WelcomeFooter';
 
 const WelcomePage = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    // 소셜 로그인 콜백 처리: code 파라미터가 있으면 /callback으로 리다이렉트
+    useEffect(() => {
+        const code = searchParams.get('code');
+        if (code) {
+            navigate(`/callback?code=${code}`, { replace: true });
+        }
+    }, [searchParams, navigate]);
 
     // 로그인 상태 확인
     const isAuthenticated = useAuthStore((s) => s.status === 'authenticated');
@@ -51,19 +60,19 @@ const WelcomePage = () => {
 
             {/* 메인 컨텐츠 */}
             <main className={`${styles['welcome-page__main']} welcome-page__main`}>
-                <WelcomeHero/>
+                <WelcomeHero />
 
                 {/* 로그인 안 되어있을 때만 로그인 액션 표시 */}
                 {!isAuthenticated && (
                     <div className={`${styles['welcome-page__actions']} welcome-page__actions`}>
-                        <EmailLoginButton onClick={handleEmailLogin}/>
+                        <EmailLoginButton onClick={handleEmailLogin} />
 
                         <div className={`${styles['welcome-page__divider']} welcome-page__divider`}>
                             <span
                                 className={`${styles['welcome-page__divider-text']} welcome-page__divider-text`}>또는</span>
                         </div>
 
-                        <SocialButtonGroup onSocialLogin={handleSocialLogin}/>
+                        <SocialButtonGroup onSocialLogin={handleSocialLogin} />
                     </div>
                 )}
 
@@ -75,7 +84,7 @@ const WelcomePage = () => {
                         </p>
                         <button
                             className={`${styles['welcome-page__start-button']} welcome-page__start-button`}
-                            onClick={() => navigate('/home')} // 홈 페이지로 이동
+                            onClick={() => navigate('/scenarios')}
                         >
                             훈련 시작하기
                         </button>
@@ -83,7 +92,7 @@ const WelcomePage = () => {
                 )}
             </main>
 
-            <WelcomeFooter/>
+            <WelcomeFooter />
         </div>
     );
 };
