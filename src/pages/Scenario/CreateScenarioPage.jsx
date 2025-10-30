@@ -30,6 +30,10 @@ const CreateScenarioPage = () => {
                 ...formData,
             });
             alert('시나리오가 생성되었습니다!');
+            navigate('/', {
+                state: {
+                    activeTab: 'custom'
+                }})
         } catch (error) {
             alert('시나리오 생성에 실패했습니다.');
         }
