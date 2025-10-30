@@ -1,0 +1,81 @@
+/* src/components/Feedback/FeedbackResultView.module.scss */
+
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$primary-blue: #5B7FDB;
+$primary-blue-light: #6B8EE8;
+
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+.result-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
+  max-width: 100%;
+}
+
+.result-view__header {
+  text-align: center;
+}
+
+.result-view__title {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: $deep-navy;
+}
+
+.result-view__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: $warm-gray;
+}
+
+.result-view__content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.result-view__actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.result-view__close-button {
+  width: 100%;
+  max-width: 300px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: $primary-blue;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $primary-blue-light;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .result-view__title {
+    color: #E5E7EB;
+  }
+
+  .result-view__subtitle {
+    color: #9CA3AF;
+  }
+}

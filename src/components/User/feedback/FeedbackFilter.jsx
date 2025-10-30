@@ -1,68 +1,44 @@
 // src/components/User/feedback/FeedbackFilter.jsx
-// import styles from './FeedbackFilter.module.scss';
-import React from 'react';
+import styles from './FeedbackFilter.module.scss';
 
 /**
- * 피드백 필터/정렬 컴포넌트
- *
- * @param {string} selectedGrade - 선택된 등급 ('ALL' | 'A' | 'B' | 'C' | 'D' | 'F')
- * @param {string} sortOrder - 정렬 순서 ('createdAt,desc' | 'createdAt,asc' | 'overallScore,desc' | 'overallScore,asc')
- * @param {function} onGradeChange - 등급 필터 변경 핸들러
- * @param {function} onSortChange - 정렬 변경 핸들러
+ * 피드백 필터 컴포넌트
  */
-const FeedbackFilter = ({selectedGrade, sortOrder, onGradeChange, onSortChange}) => {
-    const grades = [
-        {value: 'ALL', label: '전체'},
-        {value: 'A', label: 'A (90점 이상)'},
-        {value: 'B', label: 'B (70-89점)'},
-        {value: 'C', label: 'C (50-69점)'},
-        {value: 'D', label: 'D (30-49점)'},
-        {value: 'F', label: 'F (30점 미만)'},
-    ];
-
-    const sortOptions = [
-        {value: 'createdAt,desc', label: '최신순'},
-        {value: 'createdAt,asc', label: '오래된순'},
-        {value: 'overallScore,desc', label: '점수 높은순'},
-        {value: 'overallScore,asc', label: '점수 낮은순'},
-    ];
+const FeedbackFilter = ({ selectedGrade, sortOrder, onGradeChange, onSortChange }) => {
+    const grades = ['ALL', 'A', 'B', 'C', 'D', 'F'];
 
     return (
-        <div className="feedback-filter">
+        <div className={styles.filter}>
             {/* 등급 필터 */}
-            <div className="feedback-filter__section">
-                <label className="feedback-filter__label">등급 필터</label>
-                <div className="feedback-filter__grade-buttons">
+            <div className={styles.filter__section}>
+                <label className={styles.filter__label}>등급</label>
+                <div className={styles.filter__grades}>
                     {grades.map(grade => (
                         <button
-                            key={grade.value}
-                            className={`feedback-filter__grade-button ${
-                                selectedGrade === grade.value ? 'feedback-filter__grade-button--active' : ''
+                            key={grade}
+                            className={`${styles.filter__grade_button} ${
+                                selectedGrade === grade ? styles['filter__grade_button--active'] : ''
                             }`}
-                            onClick={() => onGradeChange(grade.value)}
+                            onClick={() => onGradeChange(grade)}
                         >
-                            {grade.label}
+                            {grade === 'ALL' ? '전체' : grade}
                         </button>
                     ))}
                 </div>
             </div>
 
             {/* 정렬 */}
-            <div className="feedback-filter__section">
-                <label className="feedback-filter__label" htmlFor="sort-select">
-                    정렬
-                </label>
+            <div className={styles.filter__section}>
+                <label className={styles.filter__label}>정렬</label>
                 <select
-                    id="sort-select"
-                    className="feedback-filter__sort-select"
+                    className={styles.filter__select}
                     value={sortOrder}
                     onChange={(e) => onSortChange(e.target.value)}
                 >
-                    {sortOptions.map(option => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                        </option>
-                    ))}
+                    <option value="createdAt,desc">최신순</option>
+                    <option value="createdAt,asc">오래된순</option>
+                    <option value="totalScore,desc">점수 높은순</option>
+                    <option value="totalScore,asc">점수 낮은순</option>
                 </select>
             </div>
         </div>

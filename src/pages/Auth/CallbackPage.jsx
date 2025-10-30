@@ -39,10 +39,10 @@ const CallbackPage = () => {
                 await exchangeCode(code);
 
                 setStatus('success');
-                setMessage('로그인 성공! 홈으로 이동합니다.');
+                setMessage('로그인 성공! 시나리오 목록으로 이동합니다.');
 
                 setTimeout(() => {
-                    navigate('/home', { replace: true }); // ← 홈으로 이동
+                    navigate('/scenarios', { replace: true });
                 }, 1500);
 
             } catch (error) {

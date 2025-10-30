@@ -26,8 +26,8 @@ const LoginPage = () => {
 
             await login(credentials);
 
-            // 성공 → 홈으로 이동
-            navigate('/home', { replace: true });
+            // 성공 → 시나리오 목록으로 이동
+            navigate('/scenarios', { replace: true });
 
         } catch (err) {
             console.error('로그인 실패:', err);

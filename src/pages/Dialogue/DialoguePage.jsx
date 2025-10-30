@@ -28,6 +28,7 @@ const DialoguePage = () => {
 
     // 리액트 커스텀 훅
     const {
+        sessionId: currentSessionId,
         connected,
         wsConnected,
         transcripts,
@@ -163,13 +164,9 @@ const DialoguePage = () => {
             await handleEndSession(true); // 완료로 처리
             toast.success('대화 연습이 완료되었습니다!', { id: endingToast });
 
+            // 피드백 페이지로 이동
             setTimeout(() => {
-                navigate('/', {
-                    state: {
-                        completed: true,
-                        sessionData: { transcripts, scenarioId }
-                    }
-                });
+                navigate(`/feedback/${currentSessionId}`);
             }, 1000);
         } catch (error) {
             toast.error('대화 완료 중 오류가 발생했습니다.', { id: endingToast });

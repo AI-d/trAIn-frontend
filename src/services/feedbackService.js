@@ -1,7 +1,7 @@
 // src/services/feedbackService.js
 
 import apiClient from '@/services/apiClient';
-import {unwrap} from '@/utils/normalize';
+import { unwrap } from '@/utils/normalize';
 
 /**
  * @fileoverview 피드백 관련 API 모듈
@@ -13,7 +13,9 @@ import {unwrap} from '@/utils/normalize';
  * @returns {Promise<import('./types').FeedbackResponseDto>}
  */
 export async function generateFeedback(sessionId) {
-    const {data} = await apiClient.post(`/feedbacks/sessions/${sessionId}`);
+    const { data } = await apiClient.post(`/feedbacks/sessions/${sessionId}`, {}, {
+        timeout: 60000 // AI 피드백 생성은 시간이 오래 걸릴 수 있으므로 60초로 설정
+    });
     return unwrap(data).data;
 }
 
@@ -23,7 +25,7 @@ export async function generateFeedback(sessionId) {
  * @returns {Promise<import('./types').FeedbackResponseDto>}
  */
 export async function getFeedback(sessionId) {
-    const {data} = await apiClient.get(`/feedbacks/${sessionId}`);
+    const { data } = await apiClient.get(`/feedbacks/${sessionId}`);
     return unwrap(data).data;
 }
 
@@ -34,7 +36,7 @@ export async function getFeedback(sessionId) {
  * @returns {Promise<import('./types').FeedbackResponseDto>}
  */
 export async function chooseFeedbackAlternative(sessionId, choice) {
-    const {data} = await apiClient.put(`/feedbacks/${sessionId}/choice`, {
+    const { data } = await apiClient.put(`/feedbacks/${sessionId}/choice`, {
         chosenAlternative: choice
     });
     return unwrap(data).data;
@@ -46,7 +48,7 @@ export async function chooseFeedbackAlternative(sessionId, choice) {
  * @returns {Promise<import('./types').FeedbackStatsResponseDto>}
  */
 export async function getFeedbackStats(userId) {
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/stats`);
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/stats`);
     return unwrap(data).data;
 }
 
@@ -66,8 +68,8 @@ export async function getFeedbackHistory(userId, params = {}) {
         sort = 'createdAt,desc'
     } = params;
 
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/history`, {
-        params: {page, size, sort}
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/history`, {
+        params: { page, size, sort }
     });
     return unwrap(data).data;
 }
@@ -78,7 +80,7 @@ export async function getFeedbackHistory(userId, params = {}) {
  * @returns {Promise<import('./types').FeedbackResponseDto[]>}
  */
 export async function getAllFeedbackHistory(userId) {
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/history/all`);
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/history/all`);
     return unwrap(data).data;
 }
 
@@ -99,8 +101,8 @@ export async function getFeedbacksByScenario(userId, scenarioId, params = {}) {
         sort = 'createdAt,desc'
     } = params;
 
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/scenarios/${scenarioId}`, {
-        params: {page, size, sort}
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/scenarios/${scenarioId}`, {
+        params: { page, size, sort }
     });
     return unwrap(data).data;
 }
@@ -122,8 +124,8 @@ export async function getFeedbacksByGrade(userId, grade, params = {}) {
         sort = 'createdAt,desc'
     } = params;
 
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/grades/${grade}`, {
-        params: {page, size, sort}
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/grades/${grade}`, {
+        params: { page, size, sort }
     });
     return unwrap(data).data;
 }
@@ -135,8 +137,8 @@ export async function getFeedbacksByGrade(userId, grade, params = {}) {
  * @returns {Promise<import('./types').FeedbackResponseDto[]>}
  */
 export async function getRecentFeedbacks(userId, limit = 5) {
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/recent`, {
-        params: {limit}
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/recent`, {
+        params: { limit }
     });
     return unwrap(data).data;
 }
@@ -147,7 +149,7 @@ export async function getRecentFeedbacks(userId, limit = 5) {
  * @returns {Promise<string>} message
  */
 export async function deleteFeedback(sessionId) {
-    const {data} = await apiClient.delete(`/feedbacks/${sessionId}`);
+    const { data } = await apiClient.delete(`/feedbacks/${sessionId}`);
     return unwrap(data).message; // "피드백이 삭제되었습니다."
 }
 
@@ -165,12 +167,12 @@ export async function getImprovementProgress(userId, params = {}) {
         scenarioId
     } = params;
 
-    const queryParams = {period};
+    const queryParams = { period };
     if (scenarioId) {
         queryParams.scenarioId = scenarioId;
     }
 
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/progress`, {
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/progress`, {
         params: queryParams
     });
     return unwrap(data).data;
@@ -190,12 +192,12 @@ export async function getWeaknessAnalysis(userId, params = {}) {
         category
     } = params;
 
-    const queryParams = {limit};
+    const queryParams = { limit };
     if (category) {
         queryParams.category = category;
     }
 
-    const {data} = await apiClient.get(`/feedbacks/users/${userId}/weakness`, {
+    const { data } = await apiClient.get(`/feedbacks/users/${userId}/weakness`, {
         params: queryParams
     });
     return unwrap(data).data;

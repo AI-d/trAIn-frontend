@@ -1,31 +1,31 @@
 // src/components/User/feedback/FeedbackCard.jsx
-// import styles from './FeedbackCard.module.scss';
-import React from 'react';
+import styles from './FeedbackCard.module.scss';
 
 /**
- * 개별 피드백 카드 컴포넌트
- *
- * @param {object} feedback - 피드백 데이터
- * @param {function} onViewDetail - 상세 보기 핸들러
+ * 피드백 카드 컴포넌트
  */
-const FeedbackCard = ({feedback, onViewDetail}) => {
+const FeedbackCard = ({ feedback, onViewDetail }) => {
     const {
-        sessionId,
-        overallScore,
-        grade,
-        aiGeneratedFeedback,
+        scenarioTitle,
+        totalScore,
+        scoreGrade,
         createdAt,
+        chosenAlternative,
     } = feedback;
 
-    // 점수에 따른 등급 클래스
-    const getScoreClass = (score) => {
-        if (score >= 90) return 'feedback-card__score--excellent'; // A
-        if (score >= 70) return 'feedback-card__score--good';      // B
-        if (score >= 50) return 'feedback-card__score--average';   // C
-        return 'feedback-card__score--poor';                       // D, F
+    // 등급별 색상
+    const getGradeColor = (grade) => {
+        switch (grade) {
+            case 'A': return '#10B981';
+            case 'B': return '#6B8EE8';
+            case 'C': return '#F59E0B';
+            case 'D': return '#EF4444';
+            case 'F': return '#991B1B';
+            default: return '#6B7280';
+        }
     };
 
-    // 날짜 포맷팅
+    // 날짜 포맷
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('ko-KR', {
@@ -35,38 +35,36 @@ const FeedbackCard = ({feedback, onViewDetail}) => {
         });
     };
 
-    // 피드백 요약 (첫 100자만)
-    const getFeedbackSummary = (text) => {
-        if (!text) return '피드백 내용이 없습니다.';
-        return text.length > 100 ? `${text.substring(0, 100)}...` : text;
-    };
-
     return (
-        <div className="feedback-card">
-            {/* 헤더: 점수 + 등급 */}
-            <div className="feedback-card__header">
-                <div className={`feedback-card__score ${getScoreClass(overallScore)}`}>
-                    <span className="feedback-card__score-value">{overallScore}점</span>
-                    <span className="feedback-card__score-grade">({grade})</span>
-                </div>
-                <span className="feedback-card__date">{formatDate(createdAt)}</span>
-            </div>
-
-            {/* 피드백 요약 */}
-            <div className="feedback-card__content">
-                <p className="feedback-card__summary">
-                    {getFeedbackSummary(aiGeneratedFeedback)}
-                </p>
-            </div>
-
-            {/* 상세 보기 버튼 */}
-            <div className="feedback-card__footer">
-                <button
-                    className="feedback-card__detail-button"
-                    onClick={() => onViewDetail(feedback)}
+        <div className={styles.card} onClick={() => onViewDetail(feedback)}>
+            <div className={styles.card__header}>
+                <h3 className={styles.card__title}>{scenarioTitle}</h3>
+                <div 
+                    className={styles.card__grade}
+                    style={{ color: getGradeColor(scoreGrade) }}
                 >
-                    상세 보기
-                </button>
+                    {scoreGrade}
+                </div>
+            </div>
+
+            <div className={styles.card__body}>
+                <div className={styles.card__score}>
+                    <span className={styles.card__score_label}>점수</span>
+                    <span className={styles.card__score_value}>{totalScore}점</span>
+                </div>
+
+                {chosenAlternative && (
+                    <div className={styles.card__choice}>
+                        <span className={styles.card__choice_badge}>
+                            개선안 {chosenAlternative} 선택
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            <div className={styles.card__footer}>
+                <span className={styles.card__date}>{formatDate(createdAt)}</span>
+                <button className={styles.card__button}>자세히 보기</button>
             </div>
         </div>
     );

@@ -1,0 +1,101 @@
+// src/pages/Feedback/FeedbackGenerationPage.jsx
+import styles from './FeedbackGenerationPage.module.scss';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { generateFeedback, chooseFeedbackAlternative } from '@/services/feedbackService';
+import FeedbackLoadingView from '@/components/Feedback/FeedbackLoadingView';
+import FeedbackResultView from '@/components/Feedback/FeedbackResultView';
+import toast from 'react-hot-toast';
+
+/**
+ * 피드백 생성 페이지
+ * 대화 완료 후 AI 피드백을 생성하고 표시
+ */
+const FeedbackGenerationPage = () => {
+    const { sessionId } = useParams();
+    const navigate = useNavigate();
+
+    const [loading, setLoading] = useState(true);
+    const [feedback, setFeedback] = useState(null);
+    const [error, setError] = useState('');
+
+    // 피드백 생성
+    useEffect(() => {
+        if (!sessionId) {
+            toast.error('세션 정보가 없습니다.');
+            navigate('/scenarios');
+            return;
+        }
+
+        const fetchFeedback = async () => {
+            try {
+                setLoading(true);
+                const data = await generateFeedback(sessionId);
+                console.log('✅ 피드백 데이터 받음:', data);
+                console.log('📊 데이터 구조:', {
+                    totalScore: data?.totalScore,
+                    scoreGrade: data?.scoreGrade,
+                    alternativeA: data?.alternativeA,
+                    alternativeB: data?.alternativeB,
+                    alternativeC: data?.alternativeC,
+                    improvementPoints: data?.improvementPoints,
+                });
+                setFeedback(data);
+            } catch (err) {
+                console.error('피드백 생성 실패:', err);
+                const errorData = err.response?.data;
+                setError(errorData?.detail || errorData?.message || '피드백 생성에 실패했습니다.');
+                toast.error('피드백 생성에 실패했습니다.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFeedback();
+    }, [sessionId, navigate]);
+
+    // 개선안 선택
+    const handleChooseAlternative = async (choice) => {
+        try {
+            const updatedFeedback = await chooseFeedbackAlternative(sessionId, choice);
+            setFeedback(updatedFeedback);
+            toast.success(`개선안 ${choice}를 선택했습니다.`);
+        } catch (err) {
+            console.error('개선안 선택 실패:', err);
+            toast.error('개선안 선택에 실패했습니다.');
+        }
+    };
+
+    // 닫기 (시나리오 목록으로 이동)
+    const handleClose = () => {
+        navigate('/scenarios');
+    };
+
+    // 에러 화면
+    if (error && !loading) {
+        return (
+            <div className={styles['feedback-page']}>
+                <div className={styles['feedback-page__error']}>
+                    <h2>피드백 생성 실패</h2>
+                    <p>{error}</p>
+                    <button onClick={handleClose}>시나리오 목록으로</button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className={styles['feedback-page']}>
+            {loading && <FeedbackLoadingView />}
+            {!loading && feedback && (
+                <FeedbackResultView
+                    feedback={feedback}
+                    onChooseAlternative={handleChooseAlternative}
+                    onClose={handleClose}
+                />
+            )}
+        </div>
+    );
+};
+
+export default FeedbackGenerationPage;

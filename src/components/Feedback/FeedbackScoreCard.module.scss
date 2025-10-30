@@ -1,0 +1,70 @@
+/* src/components/Feedback/FeedbackScoreCard.module.scss */
+
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+
+.score-card {
+  background: $soft-white;
+  border: 1px solid $border-gray;
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.score-card__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.score-card__grade {
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.score-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.score-card__score-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: $deep-navy;
+}
+
+.score-card__score-max {
+  font-size: 20px;
+  font-weight: 500;
+  color: $warm-gray;
+}
+
+.score-card__label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: $warm-gray;
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .score-card {
+    background: #1F2937;
+    border-color: #4B5563;
+  }
+
+  .score-card__score-value {
+    color: #E5E7EB;
+  }
+
+  .score-card__score-max,
+  .score-card__label {
+    color: #9CA3AF;
+  }
+}

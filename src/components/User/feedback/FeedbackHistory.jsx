@@ -1,6 +1,6 @@
 // src/components/User/feedback/FeedbackHistory.jsx
-// import styles from './FeedbackHistory.module.scss';
-import React, {useEffect, useState} from 'react';
+import styles from './FeedbackHistory.module.scss';
+import {useEffect, useState} from 'react';
 import {useAuthUser} from '@/stores/authStore';
 import * as feedbackService from '@/services/feedbackService';
 import FeedbackCard from './FeedbackCard';
@@ -73,12 +73,14 @@ const FeedbackHistory = () => {
 
             } catch (err) {
                 console.error('피드백 목록 로딩 실패:', err);
-                setError('피드백 목록을 불러오는데 실패했습니다.');
+                console.error('에러 상세:', err.response?.data);
+                setError(err.response?.data?.message || '피드백 목록을 불러오는데 실패했습니다.');
             } finally {
                 setLoading(false);
             }
         };
 
+        console.log('피드백 목록 로딩 시작 - userId:', user?.userId);
         fetchFeedbacks();
     }, [user?.userId, selectedGrade, sortOrder, currentPage]);
 
@@ -115,15 +117,19 @@ const FeedbackHistory = () => {
 
     // 로딩 중
     if (loading && feedbacks.length === 0) {
-        return <LoadingOverlay message="피드백 목록을 불러오는 중..."/>;
+        return (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <p>피드백 목록을 불러오는 중...</p>
+            </div>
+        );
     }
 
     return (
-        <div className="feedback-history">
+        <div className={styles['feedback-history']}>
             {/* 헤더 */}
-            <div className="feedback-history__header">
-                <h2 className="feedback-history__title">피드백 히스토리</h2>
-                <p className="feedback-history__subtitle">
+            <div className={styles['feedback-history__header']}>
+                <h2 className={styles['feedback-history__title']}>피드백 히스토리</h2>
+                <p className={styles['feedback-history__subtitle']}>
                     AI가 분석한 대화 피드백을 확인하세요.
                 </p>
             </div>
@@ -138,15 +144,15 @@ const FeedbackHistory = () => {
 
             {/* 에러 메시지 */}
             {error && (
-                <div className="feedback-history__error">
+                <div className={styles['feedback-history__error']}>
                     <ErrorMessage message={error} type="error"/>
                 </div>
             )}
 
             {/* 피드백 목록 */}
-            <div className="feedback-history__list">
+            <div className={styles['feedback-history__list']}>
                 {feedbacks.length === 0 ? (
-                    <div className="feedback-history__empty">
+                    <div className={styles['feedback-history__empty']}>
                         <p>아직 피드백이 없습니다.</p>
                         <p>대화 훈련을 시작해보세요!</p>
                     </div>
@@ -163,19 +169,19 @@ const FeedbackHistory = () => {
 
             {/* 페이지네이션 */}
             {totalPages > 1 && (
-                <div className="feedback-history__pagination">
+                <div className={styles['feedback-history__pagination']}>
                     <button
-                        className="feedback-history__page-button"
+                        className={styles['feedback-history__page-button']}
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 0}
                     >
                         이전
                     </button>
-                    <span className="feedback-history__page-info">
+                    <span className={styles['feedback-history__page-info']}>
             {currentPage + 1} / {totalPages}
           </span>
                     <button
-                        className="feedback-history__page-button"
+                        className={styles['feedback-history__page-button']}
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={!hasMore}
                     >
