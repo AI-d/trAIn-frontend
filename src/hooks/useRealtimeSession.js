@@ -59,6 +59,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const [reconnecting, setReconnecting] = useState(false);
     const [isInitialGreeting, setIsInitialGreeting] = useState(true);
     const [sttError, setSttError] = useState(null);
+    const [connectionError, setConnectionError] = useState(null);
 
     const transcriptsRef = useRef(transcripts);
 
@@ -696,19 +697,21 @@ export const useRealtimeSession = (scenarioId, userId) => {
      */
     const attemptFullReconnect = useCallback((reason) => {
         console.log(`🔄 전체 재연결 시도: ${reason}`);
-        console.log(`연결이 끊어졌습니다. 재연결을 시도합니다...`);
 
-        setTimeout(() => {
-            if (isMountedRef.current) {
-                // 마이크 연결 끊김은 대화 중이므로 failed 처리하지 않음 (ongoing 유지)
-                // WebRTC 연결 끊김은 초기 연결 문제일 수 있으므로 failed 처리
-                if (reason.includes('WebRTC') || reason.includes('초기')) {
-                    failSession(scenarioId, userId, reason);
-                }
-                // 마이크 연결 끊김은 세션 상태 유지하면서 재연결만 시도
-                window.location.reload();
-            }
-        }, 3000);
+        // 에러 상태 설정 (DialoguePage에서 감지)
+        setConnectionError({
+            type: reason.includes('마이크') ? 'microphone' : 'webrtc',
+            message: reason.includes('마이크')
+                ? '마이크 연결이 끊어졌습니다.\n마이크를 확인하고 다시 시도해주세요.'
+                : '연결이 끊어졌습니다.\n다시 시도해주세요.',
+            reason: reason
+        });
+
+        // WebRTC 연결 끊김은 초기 연결 문제일 수 있으므로 failed 처리
+        // 마이크 연결 끊김은 ongoing 유지
+        if (reason.includes('WebRTC') || reason.includes('초기')) {
+            failSession(scenarioId, userId, reason);
+        }
     }, [failSession, scenarioId, userId]);
 
     /**
@@ -1677,6 +1680,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
             isPttActive: false,
             vadStatus: 'idle',
             sttError: null,
+            connectionError: null,
             initRealtimeConnection: () => Promise.reject(new Error('No scenario ID')),
             handleUserToggle: () => { },
             handleEndSession: () => Promise.resolve(),
@@ -1702,6 +1706,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         isPttActive,
         vadStatus,
         sttError,
+        connectionError,
 
         initRealtimeConnection,
         handleUserToggle,

@@ -3,6 +3,7 @@ import {NavLink, useLocation, useNavigate} from 'react-router-dom';
 import { FiPlus, FiPlay, FiTrash2, FiClock, FiUser } from 'react-icons/fi';
 import useScenarioStore from '../../stores/scenarioStore';
 import styles from './ScenarioListPage.module.scss';
+import {useAuthStore, useAuthUser} from "@/stores/authStore.js";
 
 /**
  * 시나리오 선택 페이지
@@ -31,12 +32,22 @@ const ScenarioListPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     // TODO: authStore에서 가져올 userId (임시로 1 사용)
-    const userId = 1;
+    const user = useAuthUser();
+    const status = useAuthStore((s) => s.status);
+    const userId = user?.userId;
+
+    // 디버깅 로그
+    useEffect(() => {
+        console.log('MyProfilePage - status:', status);
+        console.log('MyProfilePage - user:', user);
+    }, [status, user]);
 
     useEffect(() => {
         fetchDefaultScenarios();
-        fetchUserScenarios(userId);
-    }, [fetchDefaultScenarios, fetchUserScenarios]);
+        if (user?.userId) { // userId 존재 확인
+            fetchUserScenarios(user.userId);
+        }
+    }, [fetchDefaultScenarios, fetchUserScenarios, user]);
 
     useEffect(() => {
         // location.state 정리 (뒤로가기 시 탭 상태 유지 방지)
@@ -204,7 +215,6 @@ const ScenarioListPage = () => {
                                         <NavLink
                                             to = {'/create'}
                                             className={styles.emptyButton}
-                                            userId = {userId}
                                         >
                                             첫 시나리오 만들기
                                         </NavLink>
