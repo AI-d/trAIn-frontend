@@ -81,7 +81,10 @@ apiClient.interceptors.response.use(
         }
 
         if (errorCode === 'AUTH_001') {
+            console.log('🔒 액세스 토큰 만료 감지 (401 AUTH_001)');
+            
             if (isRefreshing) {
+                console.log('⏳ 이미 토큰 갱신 중 - 큐에 대기');
                 return new Promise((resolve, reject) => {
                     refreshQueue.push({
                         resolve: (newToken) => {
@@ -98,20 +101,21 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
+                console.log('🔄 액세스 토큰 재발급 시작...');
                 const refreshResp = await apiClient.post('/users/refresh');
                 const normalized = unwrap(refreshResp.data);
                 const newAccessToken = normalized?.data?.accessToken || normalized?.data;
 
                 if (!newAccessToken) throw new Error('No access token in refresh response.');
 
-                // localStorage에 새 토큰 저장
-                localStorage.setItem('accessToken', newAccessToken);
+                console.log('✅ 액세스 토큰 재발급 성공:', newAccessToken.substring(0, 20) + '...');
 
+                // 메모리(Zustand store)에만 새 토큰 저장
                 const {useAuthStore} = await import('@/stores/authStore');
                 const authStore = useAuthStore.getState();
                 authStore.setAccessToken(newAccessToken);
 
-                // 🔧 수정: refresh 성공 후 사용자 정보도 자동 갱신
+                // refresh 성공 후 사용자 정보도 자동 갱신
                 authStore.fetchUser();
 
                 resolveQueue(newAccessToken);
@@ -120,6 +124,7 @@ apiClient.interceptors.response.use(
                 originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
                 return apiClient(originalRequest);
             } catch (refreshErr) {
+                console.error('❌ 액세스 토큰 재발급 실패:', refreshErr);
                 rejectQueue(refreshErr);
                 return Promise.reject(refreshErr);
             } finally {
