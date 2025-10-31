@@ -24,7 +24,31 @@ export const useAuthStore = create(
             initializeAuth: async () => {
                 try {
                     // refresh 토큰(쿠키)으로 새 accessToken 발급 시도
-                    const refreshResp = await apiClient.post('/users/refresh');
+                    const refreshResp = await apiClient.post('/users/refresh', null, {
+                        validateStatus: (status) => status >= 200 && status < 600
+                    });
+
+                    // 401이면 로그아웃 상태 (정상)
+                    if (refreshResp.status === 401) {
+                        set({
+                            status: 'unauthenticated',
+                            user: null,
+                            isInitialized: true,
+                        });
+                        return;
+                    }
+
+                    // 500 등 서버 에러도 로그아웃 상태로 처리
+                    if (refreshResp.status !== 200) {
+                        console.warn(`토큰 갱신 실패 (${refreshResp.status}):`, refreshResp.data);
+                        set({
+                            status: 'unauthenticated',
+                            user: null,
+                            isInitialized: true,
+                        });
+                        return;
+                    }
+
                     const newAccessToken = refreshResp.data?.data?.accessToken;
 
                     if (!newAccessToken) {
@@ -44,7 +68,6 @@ export const useAuthStore = create(
                 } catch (error) {
                     console.error('인증 초기화 실패:', error);
 
-                    // 401 에러는 정상 (로그아웃 상태)
                     set({
                         status: 'unauthenticated',
                         user: null,
