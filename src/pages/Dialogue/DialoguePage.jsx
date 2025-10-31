@@ -67,11 +67,13 @@ const DialoguePage = () => {
 
                     // 백엔드 상태로 최종 결정
                     if (backendSession.status === 'COMPLETED') {
+                        console.log('✅ 완료된 시나리오 감지');
                         setPageStatus('blocked');
                         setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
-                    } else if (backendSession.status === 'ABANDONED') {
+                    } else if (backendSession.status === 'ABANDONED' || localSession.status === 'abandoned') {
+                        console.log('✅ 중단된 시나리오 감지');
                         setPageStatus('blocked');
-                        setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다. \n다른 시나리오를 선택해주세요.');
+                        setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다.\n다른 시나리오를 선택해주세요.');
                     } else if (backendSession.status === 'ONGOING') {
                         console.log('진행 중인 세션을 복구합니다.');
                         setPageStatus('connecting');
@@ -165,7 +167,7 @@ const DialoguePage = () => {
         try {
             await handleEndSession(false); // 중단으로 처리
             console.log('✅ 대화가 중단되었습니다');
-            navigate('/');
+            navigate('/scenarios');
         } catch (error) {
             console.error('❌ 대화 종료 실패:', error);
         }
@@ -227,7 +229,7 @@ const DialoguePage = () => {
                         <p className={styles.blockedMessage}>{blockReason}</p>
                         <button
                             className={styles.goBackButton}
-                            onClick={() => navigate('scenarios')}
+                            onClick={() => navigate('/scenarios')}
                         >
                             시나리오 목록으로 돌아가기
                         </button>
