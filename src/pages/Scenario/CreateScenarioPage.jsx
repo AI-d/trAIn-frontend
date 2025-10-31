@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import useScenarioStore from "@/stores/scenarioStore.js";
 import styles from './CreateScenarioPage.module.scss';
 import {useNavigate} from "react-router-dom";
+import {useAuthUser} from "@/stores/authStore.js";
 
 const CreateScenarioPage = () => {
 
@@ -18,7 +19,8 @@ const CreateScenarioPage = () => {
     });
 
     // TODO: authStore에서 가져오기
-    const userId = 1;
+    const userId = useAuthUser()?.userId;
+    console.log(userId);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -30,7 +32,7 @@ const CreateScenarioPage = () => {
                 ...formData,
             });
             alert('시나리오가 생성되었습니다!');
-            navigate('/', {
+            navigate('/scenarios', {
                 state: {
                     activeTab: 'custom'
                 }})

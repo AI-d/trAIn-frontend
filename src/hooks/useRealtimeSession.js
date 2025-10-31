@@ -443,8 +443,8 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 return;
             }
 
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.hostname}:9090/ws/transcript/${sessionId}`;
+            const baseWsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:9090/ws';
+            const wsUrl = `${baseWsUrl}/transcript/${sessionId}`;
 
             console.log('webSocket 연결 시도: ', wsUrl);
             wsRef.current = new WebSocket(wsUrl);

@@ -5,6 +5,7 @@ import useSessionStore from "@/stores/sessionStore.js";
 import apiClient from "@/services/apiClient.js";
 import styles from "./DialoguePage.module.scss";
 import {FiMic, FiMicOff, FiX} from "react-icons/fi";
+import {useAuthUser} from "@/stores/authStore.js";
 
 const DialoguePage = () => {
 
@@ -17,7 +18,7 @@ const DialoguePage = () => {
     const title = location.state?.scenarioTitle;
 
     // 유저 정보 (추후 authStore에서 가져오게 수정)
-    const userId = 1;
+    const userId = useAuthUser()?.userId;
 
     // 세션 상태 관리
     const { getExistingSession } = useSessionStore();
@@ -66,11 +67,11 @@ const DialoguePage = () => {
                     console.log('백엔드 세션 상태:', backendSession.status);
 
                     // 백엔드 상태로 최종 결정
-                    if (backendSession.status === 'COMPLETED') {
+                    if (backendSession.status === 'COMPLETED' && localSession.status === 'completed') {
                         console.log('✅ 완료된 시나리오 감지');
                         setPageStatus('blocked');
                         setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
-                    } else if (backendSession.status === 'ABANDONED' || localSession.status === 'abandoned') {
+                    } else if (backendSession.status === 'COMPLETED' || localSession.status === 'abandoned') {
                         console.log('✅ 중단된 시나리오 감지');
                         setPageStatus('blocked');
                         setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다.\n다른 시나리오를 선택해주세요.');
