@@ -23,11 +23,13 @@ export const useAuthStore = create(
 
             initializeAuth: async () => {
                 try {
-                    // localStorage에서 accessToken 확인
-                    const storedAccessToken = localStorage.getItem('accessToken');
+                    // refresh 토큰(쿠키)으로 새 accessToken 발급 시도
+                    const refreshResp = await apiClient.post('/users/refresh', null, {
+                        validateStatus: (status) => status >= 200 && status < 600
+                    });
 
-                    // accessToken이 없으면 로그인 안 한 상태로 간주
-                    if (!storedAccessToken) {
+                    // 401이면 로그아웃 상태 (정상)
+                    if (refreshResp.status === 401) {
                         set({
                             status: 'unauthenticated',
                             user: null,
@@ -36,31 +38,23 @@ export const useAuthStore = create(
                         return;
                     }
 
-                    // accessToken이 있으면 store에 설정하고 사용자 정보 가져오기 시도
-                    set({ accessToken: storedAccessToken });
-
-                    try {
-                        const userProfile = await userService.getMyProfile();
+                    // 500 등 서버 에러도 로그아웃 상태로 처리
+                    if (refreshResp.status !== 200) {
+                        console.warn(`토큰 갱신 실패 (${refreshResp.status}):`, refreshResp.data);
                         set({
-                            status: 'authenticated',
-                            user: userProfile,
+                            status: 'unauthenticated',
+                            user: null,
                             isInitialized: true,
                         });
                         return;
-                    } catch (error) {
-                        // accessToken이 만료되었을 수 있음 - refresh 시도
-                        console.log('저장된 accessToken 만료, refresh 시도');
                     }
 
-                    // accessToken이 만료된 경우, refresh 시도 (쿠키 기반)
-                    const refreshResp = await apiClient.post('/users/refresh');
                     const newAccessToken = refreshResp.data?.data?.accessToken;
 
                     if (!newAccessToken) {
                         throw new Error('No access token in refresh response');
                     }
 
-                    localStorage.setItem('accessToken', newAccessToken);
                     set({ accessToken: newAccessToken });
 
                     const userProfile = await userService.getMyProfile();
@@ -73,10 +67,6 @@ export const useAuthStore = create(
 
                 } catch (error) {
                     console.error('인증 초기화 실패:', error);
-
-                    // 401 에러는 정상 (로그아웃 상태)
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
 
                     set({
                         status: 'unauthenticated',
@@ -91,12 +81,7 @@ export const useAuthStore = create(
                 try {
                     const resp = await authService.login(credentials);
 
-                    // 토큰 저장
-                    localStorage.setItem('accessToken', resp.accessToken);
-                    if (resp.refreshToken) {
-                        localStorage.setItem('refreshToken', resp.refreshToken);
-                    }
-
+                    // 토큰을 메모리(Zustand store)에만 저장
                     set({ accessToken: resp.accessToken });
                     await get().fetchUser();
                 } catch (error) {
@@ -110,12 +95,7 @@ export const useAuthStore = create(
                 try {
                     const resp = await authService.exchangeToken(code);
 
-                    // 토큰 저장
-                    localStorage.setItem('accessToken', resp.accessToken);
-                    if (resp.refreshToken) {
-                        localStorage.setItem('refreshToken', resp.refreshToken);
-                    }
-
+                    // 토큰을 메모리(Zustand store)에만 저장
                     set({ accessToken: resp.accessToken });
                     await get().fetchUser();
                 } catch (error) {
@@ -129,12 +109,7 @@ export const useAuthStore = create(
                 try {
                     const resp = await authService.completeSocialSignup(payload);
 
-                    // 토큰 저장
-                    localStorage.setItem('accessToken', resp.accessToken);
-                    if (resp.refreshToken) {
-                        localStorage.setItem('refreshToken', resp.refreshToken);
-                    }
-
+                    // 토큰을 메모리(Zustand store)에만 저장
                     set({ accessToken: resp.accessToken });
                     await get().fetchUser();
                 } catch (error) {

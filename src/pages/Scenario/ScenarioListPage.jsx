@@ -31,23 +31,27 @@ const ScenarioListPage = () => {
     });
     const [showCreateModal, setShowCreateModal] = useState(false);
 
-    // TODO: authStore에서 가져올 userId (임시로 1 사용)
+    // authStore에서 인증 상태 가져오기
     const user = useAuthUser();
     const status = useAuthStore((s) => s.status);
+    const isInitialized = useAuthStore((s) => s.isInitialized);
     const userId = user?.userId;
 
-    // 디버깅 로그
+    // 인증 초기화 완료 후에만 API 호출
     useEffect(() => {
-        console.log('MyProfilePage - status:', status);
-        console.log('MyProfilePage - user:', user);
-    }, [status, user]);
-
-    useEffect(() => {
-        fetchDefaultScenarios();
-        if (user?.userId) { // userId 존재 확인
-            fetchUserScenarios(user.userId);
+        // 인증 초기화가 완료되지 않았으면 대기
+        if (!isInitialized) {
+            return;
         }
-    }, [fetchDefaultScenarios, fetchUserScenarios, user]);
+
+        // 기본 시나리오는 항상 로드
+        fetchDefaultScenarios();
+        
+        // 사용자 시나리오는 로그인 상태일 때만 로드
+        if (status === 'authenticated' && userId) {
+            fetchUserScenarios(userId);
+        }
+    }, [isInitialized, status, userId, fetchDefaultScenarios, fetchUserScenarios]);
 
     useEffect(() => {
         // location.state 정리 (뒤로가기 시 탭 상태 유지 방지)
