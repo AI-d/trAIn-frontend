@@ -172,7 +172,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
      */
     const addAudioChunk = useCallback((base64Data) => {
         if (!useBufferingRef.current) return;
-        
+
         try {
             const binaryString = atob(base64Data);
             const bytes = new Uint8Array(binaryString.length);
@@ -184,7 +184,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         } catch (error) {
             console.error('오디오 청크 디코딩 실패:', error);
             bufferErrorCountRef.current++;
-            
+
             if (bufferErrorCountRef.current >= 3) {
                 console.warn('버퍼링 에러 과다 - 기존 방식으로 전환');
                 disableBuffering();
@@ -209,14 +209,14 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const handlePlaybackError = useCallback(() => {
         console.error('❌ 재생 에러 발생');
         bufferErrorCountRef.current++;
-        
+
         cleanupBlobUrl();
         audioChunksRef.current = [];
         isBufferingRef.current = false;
-        
+
         setAiSpeaking(false);
         setVadStatus('idle');
-        
+
         if (bufferErrorCountRef.current >= 3) {
             console.warn('재생 에러 과다 - 기존 방식으로 전환');
             disableBuffering();
@@ -230,12 +230,12 @@ export const useRealtimeSession = (scenarioId, userId) => {
         useBufferingRef.current = false;
         audioChunksRef.current = [];
         cleanupBlobUrl();
-        
+
         // audio 태그를 remoteStream으로 전환
         if (audioTagRef.current && pcRef.current) {
             const receivers = pcRef.current.getReceivers();
             const audioReceiver = receivers.find(r => r.track && r.track.kind === 'audio');
-            
+
             if (audioReceiver) {
                 const remoteStream = new MediaStream([audioReceiver.track]);
                 audioTagRef.current.srcObject = remoteStream;
@@ -244,7 +244,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     .catch(err => console.error('폴백 재생 실패:', err));
             }
         }
-        
+
         console.log('⚠️ 기존 srcObject 방식으로 전환 완료');
     }, []);
 
@@ -264,9 +264,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
 
             const blob = new Blob(audioChunksRef.current, { type: 'audio/pcm' });
             const blobUrl = URL.createObjectURL(blob);
-            
+
             currentBlobUrlRef.current = blobUrl;
-            
+
             if (audioTagRef.current) {
                 audioTagRef.current.src = blobUrl;
                 audioTagRef.current.play()
@@ -276,10 +276,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         handlePlaybackError();
                     });
             }
-            
+
             audioChunksRef.current = [];
             isBufferingRef.current = false;
-            
+
         } catch (error) {
             console.error('Blob 생성 실패:', error);
             bufferErrorCountRef.current++;
@@ -366,7 +366,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 sessionId: targetSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01"
             });
-            
+
             const ephemeralResponse = await apiClient.post('/realtime/session', {
                 sessionId: targetSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01",
@@ -374,15 +374,15 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 sttModel: "whisper-1",
                 language: "ko"
             });
-            
+
             console.log('📥 Ephemeral Key 응답:', ephemeralResponse.data);
-            
+
             if (!ephemeralResponse.data.success) {
                 const errorMsg = ephemeralResponse.data.message || "Ephemeral Key 발급 실패";
                 console.error('❌ Ephemeral Key 발급 실패:', errorMsg);
                 throw new Error(errorMsg);
             }
-            
+
             const ephemeralKey = ephemeralResponse.data.data.client_secret.value;
             console.log('✅ Ephemeral Key 발급 완료');
             console.log(`🎯 GPT 세션 ID: ${ephemeralResponse.data.data.id}`);
@@ -510,7 +510,9 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     setWsConnected(false);
                 }
 
-                if (e.code !== 1000 && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS && isMountedRef.current) {
+                // 정상 종료가 아니고, 재연결 시도 횟수가 5회 미만일 때만 재연결
+                if (e.code !== 1000 && isMountedRef.current) {
+                    // attemptReconnect 내부에서 횟수 체크 및 증가 처리
                     attemptReconnect(sessionId);
                 }
             };
@@ -660,8 +662,24 @@ export const useRealtimeSession = (scenarioId, userId) => {
     /**
      * webSocket 재연결 시도
      */
-    const attemptReconnect = useCallback((sessionId) => {
+    const attemptReconnect = useCallback(async (sessionId) => {
         reconnectAttemptsRef.current++;
+
+        // 재연결 시도 5회 초과 시 세션 실패 처리
+        if (reconnectAttemptsRef.current > MAX_RECONNECT_ATTEMPTS) {
+            console.error(`❌ 재연결 실패: ${MAX_RECONNECT_ATTEMPTS}회 초과`);
+            failSession(scenarioId, userId, 'WebSocket 재연결 실패');
+            await cleanupConnection();
+            setLoading(false);
+            setReconnecting(false);
+
+            // 페이지 새로고침하여 차단 화면 표시
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            return;
+        }
+
         const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttemptsRef.current - 1);
 
         console.log(`재연결 시도 ${reconnectAttemptsRef.current} / ${MAX_RECONNECT_ATTEMPTS} (${delay}ms 후)`);
@@ -671,7 +689,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
             initWebSocket(sessionId, true);
         }, delay);
 
-    }, [initWebSocket]);
+    }, [initWebSocket, failSession, scenarioId, userId]);
 
     /**
      * 전체 세션 재연결 (WebRTC + WebSocket)
@@ -1583,10 +1601,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
         // 재생 완료 이벤트
         const handleEnded = () => {
             console.log('✅ 오디오 재생 완료 (onended)');
-            
+
             // Blob URL 정리
             cleanupBlobUrl();
-            
+
             // AI 발화 종료
             if (aiSpeakingStartRef.current) {
                 lastAiSpeakingTimeRef.current = {
@@ -1594,10 +1612,10 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     endMs: Date.now()
                 };
             }
-            
+
             setAiSpeaking(false);
             setVadStatus('idle');
-            
+
             // 첫 인사 완료
             if (isInitialGreeting) {
                 setIsInitialGreeting(false);
@@ -1606,13 +1624,13 @@ export const useRealtimeSession = (scenarioId, userId) => {
             // 성공적인 재생 후 에러 카운트 초기화
             bufferErrorCountRef.current = 0;
         };
-        
+
         // 재생 에러 이벤트
         const handleError = (e) => {
             console.error('❌ 오디오 재생 에러:', e);
             handlePlaybackError();
         };
-        
+
         // 타임아웃 설정 (무한 대기 방지)
         const handlePlay = () => {
             playbackTimeout = setTimeout(() => {
@@ -1620,24 +1638,24 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 handleEnded();
             }, 30000); // 30초 타임아웃
         };
-        
+
         const handlePause = () => {
             if (playbackTimeout) {
                 clearTimeout(playbackTimeout);
             }
         };
-        
+
         audioElement.addEventListener('ended', handleEnded);
         audioElement.addEventListener('error', handleError);
         audioElement.addEventListener('play', handlePlay);
         audioElement.addEventListener('pause', handlePause);
-        
+
         return () => {
             audioElement.removeEventListener('ended', handleEnded);
             audioElement.removeEventListener('error', handleError);
             audioElement.removeEventListener('play', handlePlay);
             audioElement.removeEventListener('pause', handlePause);
-            
+
             if (playbackTimeout) {
                 clearTimeout(playbackTimeout);
             }
