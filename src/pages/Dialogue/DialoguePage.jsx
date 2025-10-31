@@ -71,7 +71,7 @@ const DialoguePage = () => {
                         setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
                     } else if (backendSession.status === 'ABANDONED') {
                         setPageStatus('blocked');
-                        setBlockReason('종료된 대화입니다.\n새로 시작하려면 페이지를 새로고침해주세요.');
+                        setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다. \n다른 시나리오를 선택해주세요.');
                     } else if (backendSession.status === 'ONGOING') {
                         console.log('진행 중인 세션을 복구합니다.');
                         setPageStatus('connecting');
@@ -227,7 +227,7 @@ const DialoguePage = () => {
                         <p className={styles.blockedMessage}>{blockReason}</p>
                         <button
                             className={styles.goBackButton}
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate('scenarios')}
                         >
                             시나리오 목록으로 돌아가기
                         </button>
