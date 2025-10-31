@@ -59,6 +59,12 @@ $success-green: #10B981;
   color: $deep-navy;
 }
 
+.alternatives__item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .alternatives__item-button {
   padding: 6px 16px;
   font-size: 13px;
@@ -82,6 +88,22 @@ $success-green: #10B981;
   color: #fff;
   background: $success-green;
   border-radius: 8px;
+}
+
+.alternatives__item-detail-button {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $primary-blue;
+  background: transparent;
+  border: 1.5px solid $primary-blue;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($primary-blue, 0.05);
+  }
 }
 
 .alternatives__item-content {
@@ -117,7 +139,8 @@ $success-green: #10B981;
     color: #E5E7EB;
   }
 
-  .alternatives__item-button {
+  .alternatives__item-button,
+  .alternatives__item-detail-button {
     color: $primary-blue;
     border-color: $primary-blue;
     background: #1F2937;

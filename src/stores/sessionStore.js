@@ -99,7 +99,7 @@ const useSessionStore = create(
             failSession: (scenarioId, userId, errorMessage) => {
                 const key = get().getSessionKey(scenarioId, userId);
                 const now = new Date().toISOString();
-                
+
                 set((state) => ({
                     sessions: {
                         ...state.sessions,

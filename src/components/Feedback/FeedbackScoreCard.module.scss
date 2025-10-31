@@ -52,6 +52,81 @@ $warm-gray: #6B7280;
   color: $warm-gray;
 }
 
+/* 세부 점수 섹션 */
+.score-card__details {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid $border-gray;
+  text-align: left;
+}
+
+.score-card__details-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: $deep-navy;
+  text-align: center;
+}
+
+.score-card__details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.score-card__detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.score-card__detail-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: $deep-navy;
+}
+
+.score-card__detail-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.score-card__detail-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: $deep-navy;
+}
+
+.score-card__detail-max {
+  font-size: 14px;
+  font-weight: 500;
+  color: $warm-gray;
+}
+
+/* 프로그레스 바 */
+.score-card__progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-card__progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* 반응형 - 태블릿 이상 */
+@media (min-width: 768px) {
+  .score-card__details-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
 /* 다크 모드 */
 @media (prefers-color-scheme: dark) {
   .score-card {
@@ -66,5 +141,23 @@ $warm-gray: #6B7280;
   .score-card__score-max,
   .score-card__label {
     color: #9CA3AF;
+  }
+
+  .score-card__details {
+    border-top-color: #4B5563;
+  }
+
+  .score-card__details-title,
+  .score-card__detail-label,
+  .score-card__detail-value {
+    color: #E5E7EB;
+  }
+
+  .score-card__detail-max {
+    color: #9CA3AF;
+  }
+
+  .score-card__progress-bar {
+    background: #374151;
   }
 }

@@ -4,6 +4,8 @@ $soft-white: #F8F9FB;
 $border-gray: #D1D5DB;
 $deep-navy: #2C3E5D;
 $warm-gray: #6B7280;
+$primary-blue: #6B8EE8;
+$light-blue: #EEF2FF;
 
 .detail-section {
   display: flex;
@@ -23,18 +25,17 @@ $warm-gray: #6B7280;
   border: 1px solid $border-gray;
   border-radius: 12px;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.detail-section__text {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.8;
-  color: $deep-navy;
-  white-space: pre-wrap;
-}
-
-.detail-section__improvements {
-  margin-top: 20px;
+/* 블록 단위 */
+.detail-section__block {
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid $border-gray;
 }
 
 .detail-section__subtitle {
@@ -42,8 +43,48 @@ $warm-gray: #6B7280;
   font-size: 16px;
   font-weight: 600;
   color: $deep-navy;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* 텍스트 스타일 */
+.detail-section__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: $deep-navy;
+  white-space: pre-wrap;
+  padding: 12px;
+  background: $light-blue;
+  border-radius: 8px;
+  font-style: italic;
+}
+
+.detail-section__item {
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: $primary-blue;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: $deep-navy;
+  }
+}
+
+/* 리스트 */
 .detail-section__list {
   margin: 0;
   padding-left: 20px;
@@ -58,20 +99,215 @@ $warm-gray: #6B7280;
   font-size: 14px;
   line-height: 1.6;
   color: $deep-navy;
+  border: 1px solid $border-gray;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 
   strong {
-    color: #6B8EE8;
+    color: $primary-blue;
     font-weight: 600;
   }
+}
+
+.detail-section__count {
+  margin-left: 4px;
+  font-size: 12px;
+  color: $warm-gray;
+  font-weight: 500;
 }
 
 .detail-section__suggestion {
   margin-top: 8px;
   padding: 8px 12px;
-  background: #EEF2FF;
-  border-left: 3px solid #6B8EE8;
+  background: $light-blue;
+  border-left: 3px solid $primary-blue;
   border-radius: 4px;
   font-size: 13px;
+  color: $warm-gray;
+}
+
+/* 개선 포인트 */
+.detail-section__improvements {
+  margin-top: 20px;
+}
+
+/* 문장별 분석 */
+.detail-section__sentences {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-section__sentence {
+  padding: 16px;
+  background: white;
+  border: 1px solid $border-gray;
+  border-radius: 8px;
+}
+
+.detail-section__sentence-header {
+  margin-bottom: 12px;
+}
+
+.detail-section__sentence-number {
+  display: inline-block;
+  padding: 4px 12px;
+  background: $primary-blue;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.detail-section__sentence-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-section__sentence-original {
+  margin: 0;
+  padding: 12px;
+  background: #FEF3C7;
+  border-left: 3px solid #F59E0B;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $deep-navy;
+
+  strong {
+    display: inline;
+    font-weight: 600;
+    color: #D97706;
+  }
+}
+
+.detail-section__sentence-improved {
+  margin: 0;
+  padding: 12px;
+  background: #D1FAE5;
+  border-left: 3px solid #10B981;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $deep-navy;
+
+  strong {
+    display: inline;
+    font-weight: 600;
+    color: #059669;
+  }
+}
+
+/* 문제점 */
+.detail-section__issues {
+  margin-top: 8px;
+  padding: 12px;
+  background: #FEE2E2;
+  border-radius: 8px;
+
+  strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #DC2626;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    list-style: disc;
+
+    li {
+      margin-bottom: 4px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: $deep-navy;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.detail-section__issue-high {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #DC2626;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.detail-section__issue-medium {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #F59E0B;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.detail-section__issue-low {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #10B981;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* 대화 패턴 */
+.detail-section__pattern--current {
+  margin: 0;
+  padding: 12px;
+  background: #FEE2E2;
+  border-left: 3px solid #EF4444;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $deep-navy;
+}
+
+.detail-section__pattern--improved {
+  margin: 0;
+  padding: 12px;
+  background: #D1FAE5;
+  border-left: 3px solid #10B981;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $deep-navy;
+}
+
+.detail-section__dialogue {
+  margin: 0;
+  padding: 16px;
+  background: $light-blue;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: $deep-navy;
+  font-style: italic;
+  border: 2px solid $primary-blue;
+}
+
+/* 빈 상태 */
+.detail-section__empty {
+  margin: 0;
+  padding: 32px;
+  text-align: center;
+  font-size: 14px;
   color: $warm-gray;
 }
 
@@ -87,18 +323,43 @@ $warm-gray: #6B7280;
     border-color: #4B5563;
   }
 
-  .detail-section__text,
-  .detail-section__list-item {
-    color: #E5E7EB;
+  .detail-section__block,
+  .detail-section__list-item,
+  .detail-section__sentence {
+    background: #374151;
+    border-color: #4B5563;
   }
 
-  .detail-section__list-item {
-    background: #374151;
+  .detail-section__text,
+  .detail-section__item p,
+  .detail-section__list-item,
+  .detail-section__sentence-original,
+  .detail-section__sentence-improved,
+  .detail-section__pattern--current,
+  .detail-section__pattern--improved,
+  .detail-section__dialogue {
+    color: #E5E7EB;
   }
 
   .detail-section__suggestion {
     background: #1E3A5F;
-    border-left-color: #6B8EE8;
+    border-left-color: $primary-blue;
     color: #D1D5DB;
+  }
+
+  .detail-section__issues {
+    background: #7F1D1D;
+
+    strong {
+      color: #FCA5A5;
+    }
+
+    ul li {
+      color: #E5E7EB;
+    }
+  }
+
+  .detail-section__empty {
+    color: #9CA3AF;
   }
 }

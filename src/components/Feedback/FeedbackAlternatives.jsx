@@ -1,15 +1,18 @@
 // src/components/Feedback/FeedbackAlternatives.jsx
 import styles from './FeedbackAlternatives.module.scss';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * 피드백 개선안 컴포넌트
- * @param {object} alternatives - 개선안 { alternativeA, alternativeB, alternativeC }
- * @param {string} chosenAlternative - 선택된 개선안 ('A', 'B', 'C')
- * @param {function} onChoose - 개선안 선택 핸들러
  */
-const FeedbackAlternatives = ({ alternatives, chosenAlternative, onChoose }) => {
+const FeedbackAlternatives = (props) => {
+    const { alternatives, chosenAlternative, onChoose, onViewDetail } = props;
     const [selectedChoice, setSelectedChoice] = useState(chosenAlternative || null);
+
+    // chosenAlternative가 변경되면 selectedChoice 업데이트
+    useEffect(() => {
+        setSelectedChoice(chosenAlternative);
+    }, [chosenAlternative]);
 
     const handleChoose = (choice) => {
         setSelectedChoice(choice);
@@ -34,23 +37,34 @@ const FeedbackAlternatives = ({ alternatives, chosenAlternative, onChoose }) => 
                     content && (
                         <div
                             key={key}
-                            className={`${styles['alternatives__item']} ${
-                                selectedChoice === key ? styles['alternatives__item--selected'] : ''
-                            }`}
+                            className={`${styles['alternatives__item']} ${selectedChoice === key ? styles['alternatives__item--selected'] : ''
+                                }`}
                         >
                             <div className={styles['alternatives__item-header']}>
                                 <span className={styles['alternatives__item-label']}>{label}</span>
-                                {selectedChoice !== key && (
-                                    <button
-                                        className={styles['alternatives__item-button']}
-                                        onClick={() => handleChoose(key)}
-                                    >
-                                        선택
-                                    </button>
-                                )}
-                                {selectedChoice === key && (
-                                    <span className={styles['alternatives__item-badge']}>선택됨</span>
-                                )}
+                                <div className={styles['alternatives__item-actions']}>
+                                    {selectedChoice !== key && (
+                                        <button
+                                            className={styles['alternatives__item-button']}
+                                            onClick={() => handleChoose(key)}
+                                        >
+                                            선택
+                                        </button>
+                                    )}
+                                    {selectedChoice === key && (
+                                        <>
+                                            <span className={styles['alternatives__item-badge']}>선택됨</span>
+                                            {onViewDetail && (
+                                                <button
+                                                    className={styles['alternatives__item-detail-button']}
+                                                    onClick={() => onViewDetail(key)}
+                                                >
+                                                    자세히 보기
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
                             </div>
                             <p className={styles['alternatives__item-content']}>{content}</p>
                         </div>
