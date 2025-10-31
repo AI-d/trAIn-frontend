@@ -95,6 +95,24 @@ const useSessionStore = create(
                 }));
             },
 
+            // 세션 실패 (재시도 가능)
+            failSession: (scenarioId, userId, errorMessage) => {
+                const key = get().getSessionKey(scenarioId, userId);
+                const now = new Date().toISOString();
+
+                set((state) => ({
+                    sessions: {
+                        ...state.sessions,
+                        [key]: {
+                            ...state.sessions[key],
+                            status: 'failed',
+                            errorMessage: errorMessage || '연결 실패',
+                            lastActivity: now
+                        }
+                    }
+                }));
+            },
+
             // 세션 상태 확인
             getSessionStatus: (scenarioId, userId) => {
                 const session = get().getExistingSession(scenarioId, userId);
@@ -109,6 +127,11 @@ const useSessionStore = create(
             // 세션 진행 중 여부 확인
             isSessionInProgress: (scenarioId, userId) => {
                 return get().getSessionStatus(scenarioId, userId) === 'ongoing';
+            },
+
+            // 세션 실패 여부 확인
+            isSessionFailed: (scenarioId, userId) => {
+                return get().getSessionStatus(scenarioId, userId) === 'failed';
             },
 
             // 활동 시간 업데이트

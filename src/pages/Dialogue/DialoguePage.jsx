@@ -5,6 +5,7 @@ import useSessionStore from "@/stores/sessionStore.js";
 import apiClient from "@/services/apiClient.js";
 import styles from "./DialoguePage.module.scss";
 import {FiMic, FiMicOff, FiX} from "react-icons/fi";
+import {useAuthUser} from "@/stores/authStore.js";
 
 const DialoguePage = () => {
 
@@ -17,7 +18,7 @@ const DialoguePage = () => {
     const title = location.state?.scenarioTitle;
 
     // 유저 정보 (추후 authStore에서 가져오게 수정)
-    const userId = 1;
+    const userId = useAuthUser()?.userId;
 
     // 세션 상태 관리
     const { getExistingSession } = useSessionStore();
@@ -53,7 +54,7 @@ const DialoguePage = () => {
         }
 
         const checkSession = async () => {
-            // 1. 로컬 세션 확인 (빠른 초기 체크)
+            // 1. 로컬 세션 확인
             const localSession = getExistingSession(scenarioId, userId);
             
             // 2. 로컬에 세션이 있으면 백엔드에서 실제 상태 확인
@@ -66,17 +67,20 @@ const DialoguePage = () => {
                     console.log('백엔드 세션 상태:', backendSession.status);
 
                     // 백엔드 상태로 최종 결정
-                    if (backendSession.status === 'COMPLETED') {
+                    if (backendSession.status === 'COMPLETED' && localSession.status === 'completed') {
+                        console.log('✅ 완료된 시나리오 감지');
                         setPageStatus('blocked');
                         setBlockReason('완료된 시나리오입니다.\n다른 시나리오를 선택해주세요.');
-                    } else if (backendSession.status === 'ABANDONED') {
+                    } else if (backendSession.status === 'COMPLETED' || localSession.status === 'abandoned') {
+                        console.log('✅ 중단된 시나리오 감지');
                         setPageStatus('blocked');
-                        setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다. \n다른 시나리오를 선택해주세요.');
+                        setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다.\n다른 시나리오를 선택해주세요.');
+                    } else if (backendSession.status === 'FAILED' || localSession.status === 'failed') {
+                        console.log('✅ 연결 실패 감지');
+                        setPageStatus('blocked');
+                        setBlockReason('연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
                     } else if (backendSession.status === 'ONGOING') {
                         console.log('진행 중인 세션을 복구합니다.');
-                        setPageStatus('connecting');
-                    } else if (backendSession.status === 'FAILED') {
-                        console.log('이전 연결이 실패했습니다. 다시 시도합니다.');
                         setPageStatus('connecting');
                     } else {
                         setPageStatus('connecting');
@@ -165,7 +169,7 @@ const DialoguePage = () => {
         try {
             await handleEndSession(false); // 중단으로 처리
             console.log('✅ 대화가 중단되었습니다');
-            navigate('/');
+            navigate('/scenarios');
         } catch (error) {
             console.error('❌ 대화 종료 실패:', error);
         }
@@ -183,11 +187,10 @@ const DialoguePage = () => {
             await handleEndSession(true); // 완료로 처리
             console.log('✅ 대화 연습이 완료되었습니다');
             // 피드백 페이지로 이동
-            setTimeout(() => {
-                navigate(`/feedback/${currentSessionId}`);
-            }, 1000);
+            navigate(`/feedback/${currentSessionId}`);
         } catch (error) {
             console.error('❌ 대화 완료 실패:', error);
+
         }
     };
 
@@ -227,7 +230,7 @@ const DialoguePage = () => {
                         <p className={styles.blockedMessage}>{blockReason}</p>
                         <button
                             className={styles.goBackButton}
-                            onClick={() => navigate('scenarios')}
+                            onClick={() => navigate('/scenarios')}
                         >
                             시나리오 목록으로 돌아가기
                         </button>
