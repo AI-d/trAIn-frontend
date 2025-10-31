@@ -1,0 +1,107 @@
+// src/components/User/feedback/FeedbackFilter.module.scss
+
+.filter {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+
+  &__section {
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2C3E5D;
+    margin-bottom: 8px;
+  }
+
+  &__grades {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__grade_button {
+    padding: 8px 16px;
+    background: #F3F4F6;
+    color: #6B7280;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #E5E7EB;
+    }
+
+    &--active {
+      background: #6B8EE8;
+      color: white;
+      border-color: #6B8EE8;
+
+      &:hover {
+        background: #5B7FDB;
+      }
+    }
+  }
+
+  &__select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #2C3E5D;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #6B8EE8;
+    }
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .filter {
+    background: #1F2937;
+    border-color: #374151;
+
+    &__label {
+      color: #E5E7EB;
+    }
+
+    &__grade_button {
+      background: #374151;
+      color: #D1D5DB;
+      border-color: #4B5563;
+
+      &:hover {
+        background: #4B5563;
+      }
+
+      &--active {
+        background: #6B8EE8;
+        color: white;
+        border-color: #6B8EE8;
+      }
+    }
+
+    &__select {
+      background: #374151;
+      border-color: #4B5563;
+      color: #E5E7EB;
+    }
+  }
+}

@@ -1,0 +1,46 @@
+/* src/components/Welcome/WelcomeFooter.module.scss */
+
+/* 로컬 변수 (후속 중앙화 권장) */
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$bg: #FFFFFF;
+
+/* 모션 민감 사용자 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* iOS safe-area 유틸 */
+.safe {
+  padding-left: max(env(safe-area-inset-left), 16px);
+  padding-right: max(env(safe-area-inset-right), 16px);
+}
+
+.welcome-footer {
+  background: $bg;
+  border-top: 1px solid $border-gray;
+  text-align: center;
+  padding: 16px;
+  @extend .safe;
+
+  &__copyright {
+    margin: 0;
+    font-size: 12px;
+    color: $warm-gray;
+  }
+}
+
+/* 다크 모드 (옵션) */
+@media (prefers-color-scheme: dark) {
+  .welcome-footer {
+    background: #1F2937;
+    border-top-color: #374151;
+
+    &__copyright {
+      color: #9CA3AF;
+    }
+  }
+}

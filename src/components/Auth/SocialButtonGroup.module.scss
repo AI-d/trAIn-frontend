@@ -1,0 +1,31 @@
+/* src/components/Auth/SocialButtonGroup.module.scss */
+
+/* 로컬 변수 */
+$gap: 12px;
+
+/* 모션 민감 사용자 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.social-button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: $gap;
+
+  /* 버튼 그룹 하단 마진 */
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+/* 다크 모드 (옵션) */
+@media (prefers-color-scheme: dark) {
+  .social-button-group {
+    background: transparent;
+  }
+}

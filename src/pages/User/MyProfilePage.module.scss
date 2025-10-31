@@ -1,0 +1,70 @@
+// src/pages/User/MyProfilePage.module.scss
+
+.my-profile-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #F8F9FB;
+  max-width: 430px;
+  margin: 0 auto;
+
+  &__container {
+    flex: 1;
+    padding: 20px;
+  }
+
+  &__header {
+    margin-bottom: 24px;
+  }
+
+  &__title {
+    margin: 0 0 16px 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2C3E5D;
+  }
+
+  &__user-info {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  &__user-name {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2C3E5D;
+  }
+
+  &__user-email {
+    margin: 0;
+    font-size: 14px;
+    color: #6B7280;
+  }
+
+  &__content {
+    flex: 1;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .my-profile-page {
+    background-color: #111827;
+
+    &__title,
+    &__user-name {
+      color: #E5E7EB;
+    }
+
+    &__user-info {
+      background: #1F2937;
+      border-color: #374151;
+    }
+
+    &__user-email {
+      color: #9CA3AF;
+    }
+  }
+}

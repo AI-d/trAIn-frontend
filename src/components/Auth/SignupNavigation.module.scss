@@ -1,0 +1,92 @@
+/* src/components/Auth/SignupNavigation.module.scss */
+
+/* --- 로컬 변수 --- */
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+$primary-blue: #5B7FDB;
+$warm-gray: #6B7280;
+
+/* --- 진행 단계 표시줄 --- */
+.signup-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 24px;
+}
+
+.signup-navigation__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: $warm-gray;
+  flex-basis: 100px;
+  transition: color 0.2s ease;
+
+  &--active {
+    color: $primary-blue;
+    font-weight: 600;
+
+    .signup-navigation__step-number {
+      background-color: $primary-blue;
+      color: $soft-white;
+      border-color: $primary-blue;
+    }
+  }
+}
+
+.signup-navigation__step-number {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: $soft-white;
+  border: 2px solid $border-gray;
+  color: $warm-gray;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.signup-navigation__step-label {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.signup-navigation__divider {
+  flex: 1;
+  height: 2px;
+  background-color: $border-gray;
+  margin: 0 16px;
+  transform: translateY(-8px);
+}
+
+/* --- 다크 모드 --- */
+@media (prefers-color-scheme: dark) {
+  .signup-navigation__step {
+    color: #9CA3AF;
+
+    &--active {
+      color: $primary-blue;
+    }
+  }
+
+  .signup-navigation__step-number {
+    background-color: #1F2937;
+    border-color: #4B5563;
+    color: #9CA3AF;
+  }
+
+  .signup-navigation__step--active .signup-navigation__step-number {
+    background-color: $primary-blue;
+    border-color: $primary-blue;
+    color: $soft-white;
+  }
+
+  .signup-navigation__divider {
+    background-color: #4B5563;
+  }
+}

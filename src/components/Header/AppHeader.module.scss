@@ -1,3 +1,89 @@
-/*
-  컬러 가이드를 준수한 반응형 디자인
-*/
+// src/components/Header/AppHeader.module.scss
+
+.header {
+  background: white;
+  border-bottom: 1px solid #E5E7EB;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  &__container {
+    max-width: 430px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+  }
+
+  &__logo {
+    cursor: pointer;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #6B8EE8;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__username {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2C3E5D;
+  }
+
+  &__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #F3F4F6;
+    border: none;
+    border-radius: 50%;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #E5E7EB;
+      color: #374151;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .header {
+    background: #1F2937;
+    border-bottom-color: #374151;
+
+    &__title {
+      color: #6B8EE8;
+    }
+
+    &__username {
+      color: #E5E7EB;
+    }
+
+    &__button {
+      background: #374151;
+      color: #D1D5DB;
+
+      &:hover {
+        background: #4B5563;
+        color: #F3F4F6;
+      }
+    }
+  }
+}

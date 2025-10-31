@@ -1,0 +1,174 @@
+/* src/pages/Auth/SignupPage.module.scss */
+
+/* --- 로컬 변수 (V3 아키텍처) --- */
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+$deep-navy: #2C3E5D;
+$primary-blue: #5B7FDB;
+$warm-gray: #6B7280;
+$accent-red: #EF4444;
+
+/* --- 접근성: 공용 포커스 링 --- */
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+/* --- 모션 민감 사용자 지원 --- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- 1. 페이지 셸 (WelcomePage와 동일한 표준) --- */
+.signup-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: $soft-white;
+
+  /* WelcomePage와 동일한 경계선 */
+  border-left: 1px solid $border-gray;
+  border-right: 1px solid $border-gray;
+}
+
+/* --- 2. 내부 컨테이너 --- */
+.signup-page__container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+/* --- 3. 헤더 --- */
+.signup-page__header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.signup-page__title {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: $deep-navy;
+}
+
+.signup-page__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: $warm-gray;
+}
+
+/* --- 4. 진행 단계 표시줄 --- */
+.signup-page__progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 24px;
+}
+
+.signup-page__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: $warm-gray;
+  flex-basis: 100px;
+  transition: color 0.2s ease;
+
+  &.active {
+    color: $primary-blue;
+    font-weight: 600;
+
+    .signup-page__step-number {
+      background-color: $primary-blue;
+      color: $soft-white;
+      border-color: $primary-blue;
+    }
+  }
+}
+
+.signup-page__step-number {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: $soft-white;
+  border: 2px solid $border-gray;
+  color: $warm-gray;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.signup-page__step-label {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.signup-page__step-divider {
+  flex: 1;
+  height: 2px;
+  background-color: $border-gray;
+  margin: 0 16px;
+  transform: translateY(-8px);
+}
+
+/* --- 5. 에러 메시지 --- */
+.signup-page__error {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 16px;
+}
+
+/* --- 6. 다크 모드 --- */
+@media (prefers-color-scheme: dark) {
+  .signup-page {
+    background-color: #12161F;
+    border-left-color: #374151;
+    border-right-color: #374151;
+  }
+
+  .signup-page__title {
+    color: #E5E7EB;
+  }
+
+  .signup-page__subtitle {
+    color: #9CA3AF;
+  }
+
+  .signup-page__step {
+    color: #9CA3AF;
+
+    &.active {
+      color: $primary-blue;
+    }
+  }
+
+  .signup-page__step-number {
+    background-color: #1F2937;
+    border-color: #4B5563;
+    color: #9CA3AF;
+  }
+
+  .signup-page__step.active .signup-page__step-number {
+    background-color: $primary-blue;
+    border-color: $primary-blue;
+    color: $soft-white;
+  }
+
+  .signup-page__step-divider {
+    background-color: #4B5563;
+  }
+}

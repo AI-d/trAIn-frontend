@@ -28,6 +28,7 @@ const DialoguePage = () => {
 
     // 리액트 커스텀 훅
     const {
+        sessionId: currentSessionId,
         connected,
         wsConnected,
         transcripts,
@@ -61,9 +62,9 @@ const DialoguePage = () => {
                     console.log('백엔드 세션 상태 확인:', localSession.sessionId);
                     const response = await apiClient.get(`/sessions/${localSession.sessionId}`);
                     const backendSession = response.data.data;
-                    
+
                     console.log('백엔드 세션 상태:', backendSession.status);
-                    
+
                     // 백엔드 상태로 최종 결정
                     if (backendSession.status === 'COMPLETED') {
                         setPageStatus('blocked');
@@ -181,12 +182,10 @@ const DialoguePage = () => {
         try {
             await handleEndSession(true); // 완료로 처리
             console.log('✅ 대화 연습이 완료되었습니다');
-            navigate('/', {
-                state: {
-                    completed: true,
-                    sessionData: { transcripts, scenarioId }
-                }
-            });
+            // 피드백 페이지로 이동
+            setTimeout(() => {
+                navigate(`/feedback/${currentSessionId}`);
+            }, 1000);
         } catch (error) {
             console.error('❌ 대화 완료 실패:', error);
         }

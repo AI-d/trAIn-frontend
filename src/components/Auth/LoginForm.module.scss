@@ -1,0 +1,97 @@
+/* src/components/Auth/LoginForm.module.scss */
+
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$primary-blue: #5B7FDB;
+$primary-blue-light: #6B8EE8;
+$radius-md: 12px;
+
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.login-form__error {
+  margin: 0;
+}
+
+.login-form__submit-button {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: $primary-blue;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: $primary-blue-light;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.login-form__signup-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: $warm-gray;
+
+  span {
+    color: $warm-gray;
+  }
+}
+
+.login-form__link {
+  color: $primary-blue;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: $primary-blue-light;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .login-form__signup-link {
+    color: #9CA3AF;
+
+    span {
+      color: #9CA3AF;
+    }
+  }
+
+  .login-form__link {
+    color: $primary-blue;
+
+    &:hover {
+      color: $primary-blue-light;
+    }
+  }
+}

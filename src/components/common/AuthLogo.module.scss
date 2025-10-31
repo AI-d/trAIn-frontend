@@ -1,0 +1,48 @@
+/* src/components/common/AuthLogo.module.scss */
+
+$primary-blue: #5B7FDB;
+$primary-blue-light: #6B8EE8;
+
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+.auth-logo {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 24px;
+
+  &:hover {
+    .auth-logo__text {
+      color: $primary-blue-light;
+    }
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.auth-logo__text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: $primary-blue;
+  letter-spacing: -0.3px;
+  transition: color 0.2s ease;
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .auth-logo__text {
+    color: $primary-blue;
+  }
+
+  .auth-logo:hover .auth-logo__text {
+    color: $primary-blue-light;
+  }
+}

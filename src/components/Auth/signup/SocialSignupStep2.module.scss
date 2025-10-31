@@ -1,0 +1,126 @@
+/* src/components/Auth/signup/SocialSignupStep2.module.scss */
+
+/* --- 1. 인라인 변수 및 믹스인 --- */
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$border-gray: #D1D5DB;
+$border-gray-hover: #B0B8C3;
+$page-background: #F8F9FB;
+$primary-blue-light: #6B8EE8;
+$primary-blue: #5B7FDB;
+$radius-md: 12px;
+
+// 다크 모드 색상
+$dark-text-primary: #E5E7EB;
+$dark-text-secondary: #9CA3AF;
+$dark-border-color: #4B5563;
+$dark-border-color-hover: #6B7280;
+$dark-page-background: #1F2937;
+
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+/* --- 2. 컴포넌트 스타일 (V4 UI 밀도) --- */
+.social-signup-step2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.social-signup-step2__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.social-signup-step2__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: $deep-navy;
+}
+.social-signup-step2__subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: $warm-gray;
+}
+
+.social-signup-step2__form {
+  display: grid;
+  gap: 10px;
+}
+
+.social-signup-step2__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+
+  button {
+    border-radius: $radius-md;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.social-signup-step2__prev-button {
+  background: $page-background;
+  color: $deep-navy;
+  border: 1px solid $border-gray;
+
+  &:hover:not(:disabled) {
+    border-color: $border-gray-hover;
+  }
+}
+
+.social-signup-step2__submit-button {
+  background: $primary-blue;
+  color: #fff;
+  border: none;
+
+  &:hover:not(:disabled) {
+    background: $primary-blue-light;
+  }
+}
+
+/* --- 다크 모드 (Inlined) --- */
+@media (prefers-color-scheme: dark) {
+  .social-signup-step2__title {
+    color: $dark-text-primary;
+  }
+  .social-signup-step2__subtitle {
+    color: $dark-text-secondary;
+  }
+  .social-signup-step2__prev-button {
+    background: $dark-page-background;
+    color: $dark-text-primary;
+    border-color: $dark-border-color;
+    &:hover:not(:disabled) {
+      border-color: $dark-border-color-hover;
+    }
+  }
+}
