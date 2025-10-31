@@ -37,6 +37,16 @@ export async function logout() {
 }
 
 /**
+ * 리프레시 토큰으로 새 액세스 토큰 발급
+ * @param {string} refreshToken
+ * @returns {Promise<{ accessToken: string, refreshToken: string }>}
+ */
+export async function refreshToken(refreshToken) {
+    const {data} = await apiClient.post('/users/token/refresh', {refreshToken});
+    return unwrap(data).data; // { accessToken, refreshToken }
+}
+
+/**
  * 일회용 코드 → AccessToken 교환 (소셜 기존회원)
  * @param {string} code
  * @returns {Promise<{ accessToken:string }>}

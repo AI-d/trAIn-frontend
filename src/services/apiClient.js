@@ -104,6 +104,9 @@ apiClient.interceptors.response.use(
 
                 if (!newAccessToken) throw new Error('No access token in refresh response.');
 
+                // localStorage에 새 토큰 저장
+                localStorage.setItem('accessToken', newAccessToken);
+
                 const {useAuthStore} = await import('@/stores/authStore');
                 const authStore = useAuthStore.getState();
                 authStore.setAccessToken(newAccessToken);

@@ -9,6 +9,7 @@ const AppHeader = () => {
     const user = useAuthUser();
     const logout = useAuthStore((s) => s.logout);
     const status = useAuthStore((s) => s.status);
+    const isInitialized = useAuthStore((s) => s.isInitialized);
 
     const handleLogout = async () => {
         const confirmed = window.confirm('로그아웃 하시겠습니까?');
@@ -22,8 +23,8 @@ const AppHeader = () => {
         navigate('/my-profile');
     };
 
-    // 인증되지 않은 경우에만 헤더 숨김
-    if (status === 'unauthenticated') return null;
+    // 초기화 전이거나 인증되지 않은 경우 헤더 숨김
+    if (!isInitialized || status === 'unauthenticated') return null;
 
     return (
         <header className={styles.header}>
