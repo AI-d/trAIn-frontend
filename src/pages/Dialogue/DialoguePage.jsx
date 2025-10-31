@@ -88,8 +88,8 @@ const DialoguePage = () => {
                         setPageStatus('connecting');
                     }
                 } catch (error) {
-                    console.log('백엔드 세션 조회 실패, 새 세션 시작 가능:', error);
-                    // 세션이 없거나 조회 실패 시 새로 시작 가능
+                    console.log('백엔드 세션 조회 실패, 로컬 스토리지 무시하고 새 세션 시작:', error);
+                    // 백엔드에 세션이 없으면 로컬 스토리지가 꼬인 것이므로 무시하고 새 세션 시작
                     setPageStatus('connecting');
                 }
             } else {
