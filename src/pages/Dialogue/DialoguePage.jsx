@@ -54,23 +54,8 @@ const DialoguePage = () => {
         }
 
         const checkSession = async () => {
-            // 1. 로컬 세션 확인 (빠른 초기 체크)
+            // 1. 로컬 세션 확인
             const localSession = getExistingSession(scenarioId, userId);
-            
-            // 1-1. 로컬 세션 상태 먼저 체크 (빠른 차단)
-            if (localSession?.status === 'failed') {
-                console.log('✅ 연결 실패 감지 (로컬)');
-                setPageStatus('blocked');
-                setBlockReason('연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
-                return;
-            }
-            
-            if (localSession?.status === 'abandoned') {
-                console.log('✅ 중단된 시나리오 감지 (로컬)');
-                setPageStatus('blocked');
-                setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다.\n다른 시나리오를 선택해주세요.');
-                return;
-            }
             
             // 2. 로컬에 세션이 있으면 백엔드에서 실제 상태 확인
             if (localSession?.sessionId) {
@@ -202,9 +187,7 @@ const DialoguePage = () => {
             await handleEndSession(true); // 완료로 처리
             console.log('✅ 대화 연습이 완료되었습니다');
             // 피드백 페이지로 이동
-            setTimeout(() => {
-                navigate(`/feedback/${currentSessionId}`);
-            }, 1000);
+            navigate(`/feedback/${currentSessionId}`);
         } catch (error) {
             console.error('❌ 대화 완료 실패:', error);
         }
