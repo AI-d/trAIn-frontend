@@ -41,6 +41,13 @@ export const useRealtimeSession = (scenarioId, userId) => {
     const aiAudioAnalyserRef = useRef(null);
     const aiSilenceCheckIntervalRef = useRef(null);
 
+    // 오디오 버퍼 관리 관련
+    const audioChunksRef = useRef([]);
+    const currentBlobUrlRef = useRef(null);
+    const isBufferingRef = useRef(false);
+    const bufferErrorCountRef = useRef(0);
+    const useBufferingRef = useRef(true);
+
     // 상태 관리
     const [connected, setConnected] = useState(false);
     const [wsConnected, setWsConnected] = useState(false);
@@ -152,10 +159,142 @@ export const useRealtimeSession = (scenarioId, userId) => {
     };
 
     /**
+     * 오디오 버퍼링 시작
+     */
+    const startBuffering = useCallback(() => {
+        audioChunksRef.current = [];
+        isBufferingRef.current = true;
+        console.log('🎵 오디오 버퍼링 시작');
+    }, []);
+
+    /**
+     * 오디오 청크 추가
+     */
+    const addAudioChunk = useCallback((base64Data) => {
+        if (!useBufferingRef.current) return;
+        
+        try {
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            audioChunksRef.current.push(bytes.buffer);
+            console.log(`📦 오디오 청크 추가 (총 ${audioChunksRef.current.length}개)`);
+        } catch (error) {
+            console.error('오디오 청크 디코딩 실패:', error);
+            bufferErrorCountRef.current++;
+            
+            if (bufferErrorCountRef.current >= 3) {
+                console.warn('버퍼링 에러 과다 - 기존 방식으로 전환');
+                disableBuffering();
+            }
+        }
+    }, []);
+
+    /**
+     * Blob URL 정리
+     */
+    const cleanupBlobUrl = useCallback(() => {
+        if (currentBlobUrlRef.current) {
+            URL.revokeObjectURL(currentBlobUrlRef.current);
+            currentBlobUrlRef.current = null;
+            console.log('🗑️ Blob URL 정리 완료');
+        }
+    }, []);
+
+    /**
+     * 재생 에러 처리
+     */
+    const handlePlaybackError = useCallback(() => {
+        console.error('❌ 재생 에러 발생');
+        bufferErrorCountRef.current++;
+        
+        cleanupBlobUrl();
+        audioChunksRef.current = [];
+        isBufferingRef.current = false;
+        
+        setAiSpeaking(false);
+        setVadStatus('idle');
+        
+        if (bufferErrorCountRef.current >= 3) {
+            console.warn('재생 에러 과다 - 기존 방식으로 전환');
+            disableBuffering();
+        }
+    }, []);
+
+    /**
+     * 버퍼링 방식 비활성화 및 폴백
+     */
+    const disableBuffering = useCallback(() => {
+        useBufferingRef.current = false;
+        audioChunksRef.current = [];
+        cleanupBlobUrl();
+        
+        // audio 태그를 remoteStream으로 전환
+        if (audioTagRef.current && pcRef.current) {
+            const receivers = pcRef.current.getReceivers();
+            const audioReceiver = receivers.find(r => r.track && r.track.kind === 'audio');
+            
+            if (audioReceiver) {
+                const remoteStream = new MediaStream([audioReceiver.track]);
+                audioTagRef.current.srcObject = remoteStream;
+                audioTagRef.current.autoplay = true;
+                audioTagRef.current.play()
+                    .catch(err => console.error('폴백 재생 실패:', err));
+            }
+        }
+        
+        console.log('⚠️ 기존 srcObject 방식으로 전환 완료');
+    }, []);
+
+    /**
+     * Blob 생성 및 재생
+     */
+    const createAndPlayBlob = useCallback(() => {
+        if (audioChunksRef.current.length === 0) {
+            console.warn('⚠️ 재생할 오디오 청크 없음');
+            setAiSpeaking(false);
+            setVadStatus('idle');
+            return;
+        }
+
+        try {
+            cleanupBlobUrl();
+
+            const blob = new Blob(audioChunksRef.current, { type: 'audio/pcm' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            currentBlobUrlRef.current = blobUrl;
+            
+            if (audioTagRef.current) {
+                audioTagRef.current.src = blobUrl;
+                audioTagRef.current.play()
+                    .then(() => console.log('▶️ Blob 오디오 재생 시작'))
+                    .catch(err => {
+                        console.error('Blob 재생 실패:', err);
+                        handlePlaybackError();
+                    });
+            }
+            
+            audioChunksRef.current = [];
+            isBufferingRef.current = false;
+            
+        } catch (error) {
+            console.error('Blob 생성 실패:', error);
+            bufferErrorCountRef.current++;
+            handlePlaybackError();
+        }
+    }, [handlePlaybackError, cleanupBlobUrl]);
+
+    /**
      * WebRTC + WebSocket 통합 연결
      */
     const initRealtimeConnection = useCallback(async () => {
         if (!isMountedRef.current) return;
+
+        // 에러 카운트 초기화 (세션 재시작)
+        bufferErrorCountRef.current = 0;
 
         // 1. 기존 세션 존재 여부 확인
         const existingSession = getExistingSession(scenarioId, userId);
@@ -223,6 +362,11 @@ export const useRealtimeSession = (scenarioId, userId) => {
             setSessionId(targetSessionId);
 
             // 3. Ephemeral Key 발급 (재개 시에도 새로 발급)
+            console.log('🔑 Ephemeral Key 발급 요청 시작...', {
+                sessionId: targetSessionId,
+                model: "gpt-4o-realtime-preview-2024-10-01"
+            });
+            
             const ephemeralResponse = await apiClient.post('/realtime/session', {
                 sessionId: targetSessionId,
                 model: "gpt-4o-realtime-preview-2024-10-01",
@@ -230,10 +374,18 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 sttModel: "whisper-1",
                 language: "ko"
             });
-            if (!ephemeralResponse.data.success) throw new Error(ephemeralResponse.data.message || "Ephemeral Key 발급 실패");
+            
+            console.log('📥 Ephemeral Key 응답:', ephemeralResponse.data);
+            
+            if (!ephemeralResponse.data.success) {
+                const errorMsg = ephemeralResponse.data.message || "Ephemeral Key 발급 실패";
+                console.error('❌ Ephemeral Key 발급 실패:', errorMsg);
+                throw new Error(errorMsg);
+            }
+            
             const ephemeralKey = ephemeralResponse.data.data.client_secret.value;
-            console.log('Ephemeral Key 발급 완료');
-            console.log(`gpt 세션: ${ephemeralResponse.data.data.id}`);
+            console.log('✅ Ephemeral Key 발급 완료');
+            console.log(`🎯 GPT 세션 ID: ${ephemeralResponse.data.data.id}`);
 
             if (!isMountedRef.current) return;
 
@@ -617,7 +769,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
         aiSilenceCheckIntervalRef.current = setInterval(checkSilence, 200);
         console.log("🎤 AI VAD 체크 시작");
 
-    }, []);
+    }, [isInitialGreeting]);
 
 
 
@@ -678,6 +830,21 @@ export const useRealtimeSession = (scenarioId, userId) => {
             try {
                 const data = JSON.parse(event.data);
 
+                // 오디오 청크 수신
+                if (data.type === "response.audio.delta") {
+                    if (useBufferingRef.current && data.delta) {
+                        addAudioChunk(data.delta);
+                    }
+                }
+
+                // 오디오 전송 완료
+                if (data.type === "response.audio.done") {
+                    if (useBufferingRef.current) {
+                        console.log('🎵 오디오 전송 완료 - Blob 생성 및 재생');
+                        createAndPlayBlob();
+                    }
+                }
+
                 // AI 발화 시작
                 if (data.type === "output_audio_buffer.started") {
                     console.log("🤖 AI 발화 시작");
@@ -685,32 +852,41 @@ export const useRealtimeSession = (scenarioId, userId) => {
                         setAiSpeaking(true);
                         aiSpeakingStartRef.current = Date.now();
 
-                        // 첫 인사가 아닐 때만 발화 중 VAD 시작 (더 빠른 반응)
-                        if (!isInitialGreeting) {
+                        // 버퍼링 시작
+                        if (useBufferingRef.current) {
+                            startBuffering();
+                        }
+
+                        // 첫 인사가 아닐 때만 발화 중 VAD 시작 (더 빠른 반응) - 버퍼링 방식에서는 사용 안 함
+                        if (!isInitialGreeting && !useBufferingRef.current) {
                             setTimeout(() => {
                                 if (isMountedRef.current && aiSpeaking) {
                                     startAiVadCheck();
                                 }
                             }, 2000);
                         } else {
-                            console.log("🎙️ 첫 인사 중 - VAD 시작 안 함 (음성 끊김 방지)");
+                            console.log("🎙️ 첫 인사 중 또는 버퍼링 모드 - VAD 시작 안 함");
                         }
                     }
                 }
 
-                // AI 발화 종료 - VAD 시작
+                // AI 발화 종료 - VAD 시작 (버퍼링 방식에서는 사용 안 함)
                 if (data.type === "output_audio_buffer.stopped") {
-                    console.log("🔊 오디오 버퍼 정지 - VAD 시작");
-                    if (isMountedRef.current) {
-                        // 모든 대화에서 충분히 기다리기 (음성 끊김 방지)
-                        const vadDelay = isInitialGreeting ? 2000 : 1200;
-                        console.log(`⏰ VAD 시작 지연: ${vadDelay}ms (첫인사: ${isInitialGreeting})`);
+                    if (!useBufferingRef.current) {
+                        console.log("🔊 오디오 버퍼 정지 - VAD 시작 (기존 방식)");
+                        if (isMountedRef.current) {
+                            // 모든 대화에서 충분히 기다리기 (음성 끊김 방지)
+                            const vadDelay = isInitialGreeting ? 2000 : 1200;
+                            console.log(`⏰ VAD 시작 지연: ${vadDelay}ms (첫인사: ${isInitialGreeting})`);
 
-                        setTimeout(() => {
-                            if (isMountedRef.current) {
-                                startAiVadCheck();
-                            }
-                        }, vadDelay);
+                            setTimeout(() => {
+                                if (isMountedRef.current) {
+                                    startAiVadCheck();
+                                }
+                            }, vadDelay);
+                        }
+                    } else {
+                        console.log("🔊 오디오 버퍼 정지 - 버퍼링 모드에서는 무시");
                     }
                 }
 
@@ -934,7 +1110,7 @@ export const useRealtimeSession = (scenarioId, userId) => {
                     console.log("AI VAD 분석기 초기화 완료!");
                 }
             } catch (err) {
-                console.error(" AudioContext 설정 실패:", err);
+                console.error("AudioContext 설정 실패:", err);
             }
         };
 
@@ -1276,6 +1452,11 @@ export const useRealtimeSession = (scenarioId, userId) => {
         // 컴포넌트 언마운트 플래그 설정 (모든 setTimeout 중단)
         isMountedRef.current = false;
 
+        // 오디오 버퍼 정리
+        cleanupBlobUrl();
+        audioChunksRef.current = [];
+        isBufferingRef.current = false;
+
         // AI VAD 정리
         if (aiSilenceCheckIntervalRef.current) {
             clearInterval(aiSilenceCheckIntervalRef.current);
@@ -1391,6 +1572,77 @@ export const useRealtimeSession = (scenarioId, userId) => {
     useEffect(() => {
         transcriptsRef.current = transcripts;
     }, [transcripts]);
+
+    // Audio 태그 이벤트 리스너 설정
+    useEffect(() => {
+        const audioElement = audioTagRef.current;
+        if (!audioElement) return;
+
+        let playbackTimeout;
+
+        // 재생 완료 이벤트
+        const handleEnded = () => {
+            console.log('✅ 오디오 재생 완료 (onended)');
+            
+            // Blob URL 정리
+            cleanupBlobUrl();
+            
+            // AI 발화 종료
+            if (aiSpeakingStartRef.current) {
+                lastAiSpeakingTimeRef.current = {
+                    startMs: aiSpeakingStartRef.current,
+                    endMs: Date.now()
+                };
+            }
+            
+            setAiSpeaking(false);
+            setVadStatus('idle');
+            
+            // 첫 인사 완료
+            if (isInitialGreeting) {
+                setIsInitialGreeting(false);
+            }
+
+            // 성공적인 재생 후 에러 카운트 초기화
+            bufferErrorCountRef.current = 0;
+        };
+        
+        // 재생 에러 이벤트
+        const handleError = (e) => {
+            console.error('❌ 오디오 재생 에러:', e);
+            handlePlaybackError();
+        };
+        
+        // 타임아웃 설정 (무한 대기 방지)
+        const handlePlay = () => {
+            playbackTimeout = setTimeout(() => {
+                console.warn('⚠️ 재생 타임아웃 - 강제 종료');
+                handleEnded();
+            }, 30000); // 30초 타임아웃
+        };
+        
+        const handlePause = () => {
+            if (playbackTimeout) {
+                clearTimeout(playbackTimeout);
+            }
+        };
+        
+        audioElement.addEventListener('ended', handleEnded);
+        audioElement.addEventListener('error', handleError);
+        audioElement.addEventListener('play', handlePlay);
+        audioElement.addEventListener('pause', handlePause);
+        
+        return () => {
+            audioElement.removeEventListener('ended', handleEnded);
+            audioElement.removeEventListener('error', handleError);
+            audioElement.removeEventListener('play', handlePlay);
+            audioElement.removeEventListener('pause', handlePause);
+            
+            if (playbackTimeout) {
+                clearTimeout(playbackTimeout);
+            }
+        };
+    }, [isInitialGreeting, handlePlaybackError, cleanupBlobUrl]);
 
     // scenarioId가 없으면 기본값 반환
     if (!scenarioId) {
