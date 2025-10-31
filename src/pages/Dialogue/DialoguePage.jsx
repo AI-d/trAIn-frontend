@@ -190,6 +190,7 @@ const DialoguePage = () => {
             navigate(`/feedback/${currentSessionId}`);
         } catch (error) {
             console.error('❌ 대화 완료 실패:', error);
+
         }
     };
 
