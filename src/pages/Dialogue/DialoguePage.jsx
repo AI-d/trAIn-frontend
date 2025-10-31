@@ -38,6 +38,7 @@ const DialoguePage = () => {
         isPttActive,
         isInitialGreeting,
         sttError,
+        connectionError,
         initRealtimeConnection,
         handleUserToggle,
         handleEndSession,
@@ -65,6 +66,7 @@ const DialoguePage = () => {
                     const backendSession = response.data.data;
 
                     console.log('백엔드 세션 상태:', backendSession.status);
+                    console.log('로컬 세션 상태: ', localSession.status);
 
                     // 백엔드 상태로 최종 결정
                     if (backendSession.status === 'COMPLETED' && localSession.status === 'completed') {
@@ -75,13 +77,13 @@ const DialoguePage = () => {
                         console.log('✅ 중단된 시나리오 감지');
                         setPageStatus('blocked');
                         setBlockReason('중단된 대화입니다.\n중단된 대화는 다시 시작할 수 없습니다.\n다른 시나리오를 선택해주세요.');
+                    } else if (backendSession.status === 'ONGOING' || localSession.status === 'failed') {
+                        console.log('진행 중인 세션을 복구합니다.');
+                        setPageStatus('connecting');
                     } else if (backendSession.status === 'FAILED' || localSession.status === 'failed') {
                         console.log('✅ 연결 실패 감지');
                         setPageStatus('blocked');
                         setBlockReason('연결에 실패했습니다.\n잠시 후 다시 시도해주세요.');
-                    } else if (backendSession.status === 'ONGOING') {
-                        console.log('진행 중인 세션을 복구합니다.');
-                        setPageStatus('connecting');
                     } else {
                         setPageStatus('connecting');
                     }
@@ -99,6 +101,15 @@ const DialoguePage = () => {
 
         checkSession();
     }, [scenarioId, userId, getExistingSession, navigate]);
+
+    // 연결 에러 감지 (마이크 끊김 등)
+    useEffect(() => {
+        if (connectionError) {
+            console.log('🚨 연결 에러 감지:', connectionError);
+            setPageStatus('blocked');
+            setBlockReason(connectionError.message);
+        }
+    }, [connectionError]);
 
     // 연결 시작 (pageStatus가 'connecting'일 때만)
     useEffect(() => {
