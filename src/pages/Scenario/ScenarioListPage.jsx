@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {NavLink, useNavigate} from 'react-router-dom';
+import {NavLink, useLocation, useNavigate} from 'react-router-dom';
 import { FiPlus, FiPlay, FiTrash2, FiClock, FiUser } from 'react-icons/fi';
 import useScenarioStore from '../../stores/scenarioStore';
 import styles from './ScenarioListPage.module.scss';
@@ -23,7 +23,11 @@ const ScenarioListPage = () => {
         setSelectedScenario,
     } = useScenarioStore();
 
-    const [activeTab, setActiveTab] = useState('default'); // 'default' | 'custom'
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(() => {
+        // location.state에서 activeTab 확인, 없으면 'default' 사용
+        return location.state?.activeTab || 'default';
+    });
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     // TODO: authStore에서 가져올 userId (임시로 1 사용)
@@ -33,6 +37,13 @@ const ScenarioListPage = () => {
         fetchDefaultScenarios();
         fetchUserScenarios(userId);
     }, [fetchDefaultScenarios, fetchUserScenarios]);
+
+    useEffect(() => {
+        // location.state 정리 (뒤로가기 시 탭 상태 유지 방지)
+        if (location.state?.activeTab) {
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     // TODO: 시나리오 상세 조회 페이지 존재X, 생성되면 연결, 현재 기능 기준 필요 없음
     /*const handleScenarioClick = (scenario) => {

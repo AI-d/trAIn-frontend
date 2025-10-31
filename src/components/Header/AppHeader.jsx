@@ -36,7 +36,7 @@ const AppHeader = () => {
                     {user && (
                         <span className={styles.header__username}>{user.name}님</span>
                     )}
-                    
+
                     <button
                         className={styles.header__button}
                         onClick={handleMyPage}
