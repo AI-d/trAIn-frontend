@@ -1,0 +1,151 @@
+/* src/pages/Auth/EmailVerificationCompletePage.module.scss */
+
+/* --- 로컬 변수 --- */
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+$deep-navy: #2C3E5D;
+$primary-blue: #5B7FDB;
+$primary-blue-light: #6B8EE8;
+$warm-gray: #6B7280;
+$success-green: #4CAF50;
+$radius-md: 12px;
+
+/* --- 접근성: 공용 포커스 링 --- */
+@mixin focus-ring {
+  outline: 2px solid $primary-blue;
+  outline-offset: 2px;
+}
+
+/* --- 모션 민감 사용자 지원 --- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- 1. 페이지 셸 --- */
+.verification-complete-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  background-color: $soft-white;
+  border-left: 1px solid $border-gray;
+  border-right: 1px solid $border-gray;
+}
+
+/* --- 2. 내부 컨테이너 --- */
+.verification-complete-page__container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 32px;
+  text-align: center;
+}
+
+/* --- 3. 성공 아이콘 --- */
+.verification-complete-page__icon {
+  animation: scaleIn 0.5s ease-out;
+
+  svg {
+    filter: drop-shadow(0 2px 8px rgba(76, 175, 80, 0.2));
+  }
+}
+
+/* --- 4. 콘텐츠 --- */
+.verification-complete-page__content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.verification-complete-page__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: $deep-navy;
+}
+
+.verification-complete-page__subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $warm-gray;
+
+  strong {
+    color: $deep-navy;
+    font-weight: 600;
+  }
+}
+
+.verification-complete-page__info {
+  margin: 0;
+  font-size: 13px;
+  color: $warm-gray;
+}
+
+/* --- 5. 버튼 --- */
+.verification-complete-page__button {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: $primary-blue;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $primary-blue-light;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+/* --- 6. 애니메이션 --- */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --- 7. 다크 모드 --- */
+@media (prefers-color-scheme: dark) {
+  .verification-complete-page {
+    background-color: #12161F;
+    border-left-color: #374151;
+    border-right-color: #374151;
+  }
+
+  .verification-complete-page__title {
+    color: #E5E7EB;
+  }
+
+  .verification-complete-page__subtitle {
+    color: #9CA3AF;
+
+    strong {
+      color: #E5E7EB;
+    }
+  }
+
+  .verification-complete-page__info {
+    color: #9CA3AF;
+  }
+}

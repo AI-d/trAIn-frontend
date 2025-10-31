@@ -65,11 +65,11 @@ const EmailVerificationPage = () => {
 
             await authService.verifyEmail(payload);
 
-            // 성공 → 로그인 페이지로 이동
-            navigate('/login', {
+            // 성공 → 인증 완료 페이지로 이동
+            navigate('/email-verification-complete', {
                 replace: true,
                 state: {
-                    message: '이메일 인증이 완료되었습니다. 로그인해주세요.',
+                    email,
                 },
             });
 

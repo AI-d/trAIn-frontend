@@ -7,6 +7,7 @@ import WelcomePage from "@/pages/Welcome/WelcomePage.jsx";
 import LoginPage from "@/pages/Auth/LoginPage.jsx";
 import SignupPage from "@/pages/Auth/SignupPage.jsx";
 import EmailVerificationPage from "@/pages/Auth/EmailVerificationPage.jsx";
+import EmailVerificationCompletePage from "@/pages/Auth/EmailVerificationCompletePage.jsx";
 import CallbackPage from "@/pages/Auth/CallbackPage.jsx";
 import SocialSignupPage from "@/pages/Auth/SocialSignupPage.jsx";
 import MyProfilePage from "@/pages/User/MyProfilePage.jsx";
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
             { path: "login", element: <LoginPage /> },
             { path: "signup", element: <SignupPage /> },
             { path: "email-verification", element: <EmailVerificationPage /> },
+            { path: "email-verification-complete", element: <EmailVerificationCompletePage /> },
             { path: "callback", element: <CallbackPage /> },
             { path: "login/oauth2/code/:provider", element: <CallbackPage /> },
             { path: "social-signup", element: <SocialSignupPage /> },
