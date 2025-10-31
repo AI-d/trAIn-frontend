@@ -1,0 +1,307 @@
+// src/components/Feedback/FeedbackDetailModal.module.scss
+
+$soft-white: #F8F9FB;
+$border-gray: #D1D5DB;
+$deep-navy: #2C3E5D;
+$warm-gray: #6B7280;
+$primary-blue: #5B7FDB;
+$primary-blue-light: #6B8EE8;
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: modalSlideIn 0.3s ease-out;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid $border-gray;
+  }
+
+  &__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: $deep-navy;
+    margin: 0;
+  }
+
+  &__close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: $warm-gray;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $deep-navy;
+    }
+  }
+
+  &__content {
+    padding: 24px;
+  }
+
+  &__score-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  &__score-card {
+    background: $soft-white;
+    border: 1px solid $border-gray;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    min-width: 200px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  &__grade {
+    font-size: 48px;
+    font-weight: 900;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+
+  &__score {
+    font-size: 32px;
+    font-weight: 700;
+    color: $deep-navy;
+    margin-bottom: 4px;
+  }
+
+  &__score-max {
+    font-size: 20px;
+    font-weight: 500;
+    color: $warm-gray;
+  }
+
+  &__score-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: $warm-gray;
+  }
+
+  &__section {
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: $deep-navy;
+    margin-bottom: 12px;
+  }
+
+  &__text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: $deep-navy;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  &__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  &__list-item {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: $deep-navy;
+    border: 1px solid $border-gray;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      color: $primary-blue-light;
+      font-weight: 600;
+    }
+  }
+
+  &__suggestion {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #EEF2FF;
+    border-left: 3px solid $primary-blue-light;
+    border-radius: 4px;
+    font-size: 13px;
+    color: $warm-gray;
+  }
+
+  &__footer {
+    padding: 16px 24px;
+    border-top: 1px solid $border-gray;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__confirm-button {
+    background: $primary-blue;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 48px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: $primary-blue-light;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 스크롤바 스타일
+.modal {
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $soft-white;
+    border-radius: 0 16px 16px 0;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border-gray;
+    border-radius: 4px;
+
+    &:hover {
+      background: $warm-gray;
+    }
+  }
+}
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .modal {
+    background: #1F2937;
+
+    &__header {
+      border-bottom-color: #4B5563;
+    }
+
+    &__title {
+      color: #E5E7EB;
+    }
+
+    &__close-button {
+      color: #9CA3AF;
+
+      &:hover {
+        color: #E5E7EB;
+      }
+    }
+
+    &__score-card {
+      background: #374151;
+      border-color: #4B5563;
+    }
+
+    // 등급 색상은 인라인 스타일로 적용되므로 여기서 덮어쓰지 않음
+
+    &__score {
+      color: #E5E7EB;
+    }
+
+    &__score-max,
+    &__score-label {
+      color: #9CA3AF;
+    }
+
+    &__section-title {
+      color: #E5E7EB;
+    }
+
+    &__text {
+      color: #E5E7EB;
+    }
+
+    &__list-item {
+      background: #374151;
+      border-color: #4B5563;
+      color: #E5E7EB;
+
+      strong {
+        color: $primary-blue-light;
+      }
+    }
+
+    &__suggestion {
+      background: #1E3A5F;
+      border-left-color: $primary-blue-light;
+      color: #D1D5DB;
+    }
+
+    &__footer {
+      border-top-color: #4B5563;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #374151;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #4B5563;
+
+      &:hover {
+        background: #6B7280;
+      }
+    }
+  }
+}

@@ -58,7 +58,35 @@ const FeedbackGenerationPage = () => {
     const handleChooseAlternative = async (choice) => {
         try {
             const updatedFeedback = await chooseFeedbackAlternative(sessionId, choice);
-            setFeedback(updatedFeedback);
+            console.log('✅ 개선안 선택 후 업데이트된 피드백:', updatedFeedback);
+            console.log('📊 업데이트된 데이터 구조:', {
+                totalScore: updatedFeedback?.totalScore,
+                scoreGrade: updatedFeedback?.scoreGrade,
+                chosenAlternative: updatedFeedback?.chosenAlternative,
+                aiGeneratedFeedback: updatedFeedback?.aiGeneratedFeedback,
+                improvementPoints: updatedFeedback?.improvementPoints,
+            });
+            
+            // 기존 피드백 데이터를 유지하면서 선택 정보만 업데이트
+            setFeedback(prevFeedback => {
+                // null이 아닌 값만 업데이트
+                const merged = { ...prevFeedback };
+                
+                // 선택 관련 필드는 항상 업데이트
+                merged.chosenAlternative = updatedFeedback.chosenAlternative;
+                merged.finalChoice = updatedFeedback.finalChoice;
+                merged.isChoiceComplete = updatedFeedback.isChoiceComplete;
+                
+                // null이 아닌 값만 업데이트 (기존 값 보존)
+                Object.keys(updatedFeedback).forEach(key => {
+                    if (updatedFeedback[key] !== null && updatedFeedback[key] !== undefined) {
+                        merged[key] = updatedFeedback[key];
+                    }
+                });
+                
+                return merged;
+            });
+            
             toast.success(`개선안 ${choice}를 선택했습니다.`);
         } catch (err) {
             console.error('개선안 선택 실패:', err);

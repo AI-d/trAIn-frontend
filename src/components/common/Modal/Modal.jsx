@@ -2,6 +2,7 @@
 import styles from './Modal.module.scss';
 import { useEffect } from 'react';
 import FeedbackResultView from '@/components/Feedback/FeedbackResultView';
+import TermsContent from './ModalContent/TermsContent';
 
 const Modal = ({ isOpen, type, data, onClose }) => {
     // ESC 키로 닫기
@@ -36,6 +37,10 @@ const Modal = ({ isOpen, type, data, onClose }) => {
                         onChooseAlternative={() => {}} // 히스토리에서는 선택 불가
                         onClose={onClose}
                     />
+                )}
+
+                {type === 'terms' && data && (
+                    <TermsContent data={data} />
                 )}
             </div>
         </div>

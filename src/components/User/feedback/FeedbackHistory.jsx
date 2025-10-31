@@ -1,13 +1,13 @@
 // src/components/User/feedback/FeedbackHistory.jsx
 import styles from './FeedbackHistory.module.scss';
-import {useEffect, useState} from 'react';
-import {useAuthUser} from '@/stores/authStore';
+import { useEffect, useState, useMemo } from 'react';
+import { useAuthUser } from '@/stores/authStore';
 import * as feedbackService from '@/services/feedbackService';
 import FeedbackCard from './FeedbackCard';
 import FeedbackFilter from './FeedbackFilter';
-import LoadingOverlay from '@/components/common/LoadingOverlay';
 import ErrorMessage from '@/components/common/ErrorMessage';
-import Modal from '@/components/common/Modal/Modal';
+import FeedbackDetailModal from '@/components/Feedback/FeedbackDetailModal';
+import toast from 'react-hot-toast';
 
 /**
  * 피드백 히스토리 컴포넌트
@@ -16,8 +16,9 @@ import Modal from '@/components/common/Modal/Modal';
 const FeedbackHistory = () => {
     const user = useAuthUser();
 
-    const [feedbacks, setFeedbacks] = useState([]);
+    const [allFeedbacks, setAllFeedbacks] = useState([]); // 전체 피드백 목록 (간략)
     const [loading, setLoading] = useState(true);
+    const [loadingDetail, setLoadingDetail] = useState(false);
     const [error, setError] = useState('');
 
     // 필터/정렬
@@ -26,14 +27,13 @@ const FeedbackHistory = () => {
 
     // 페이지네이션
     const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [hasMore, setHasMore] = useState(false);
+    const pageSize = 10;
 
     // 모달
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedFeedback, setSelectedFeedback] = useState(null);
+    const [selectedFeedback, setSelectedFeedback] = useState(null); // 상세 피드백
 
-    // 피드백 목록 로딩
+    // 피드백 목록 로딩 (전체 조회)
     useEffect(() => {
         if (!user?.userId) return;
 
@@ -42,34 +42,20 @@ const FeedbackHistory = () => {
                 setLoading(true);
                 setError('');
 
-                let response;
+                console.log('피드백 목록 로딩 시작 - userId:', user.userId);
 
-                // 등급 필터가 있으면 등급별 조회
-                if (selectedGrade !== 'ALL') {
-                    response = await feedbackService.getFeedbacksByGrade(
-                        user.userId,
-                        selectedGrade,
-                        {
-                            page: currentPage,
-                            size: 10,
-                            sort: sortOrder,
-                        }
-                    );
-                } else {
-                    // 전체 조회
-                    response = await feedbackService.getFeedbackHistory(
-                        user.userId,
-                        {
-                            page: currentPage,
-                            size: 10,
-                            sort: sortOrder,
-                        }
-                    );
-                }
+                // 페이징으로 조회 (전체 목록)
+                const response = await feedbackService.getFeedbackHistory(
+                    user.userId,
+                    {
+                        page: 0,
+                        size: 1000, // 큰 사이즈로 전체 조회
+                        sort: sortOrder,
+                    }
+                );
 
-                setFeedbacks(response.content || []);
-                setTotalPages(response.totalPages || 0);
-                setHasMore(!response.last);
+                console.log('✅ 피드백 목록 로딩 성공:', response);
+                setAllFeedbacks(response.content || []);
 
             } catch (err) {
                 console.error('피드백 목록 로딩 실패:', err);
@@ -80,9 +66,49 @@ const FeedbackHistory = () => {
             }
         };
 
-        console.log('피드백 목록 로딩 시작 - userId:', user?.userId);
         fetchFeedbacks();
-    }, [user?.userId, selectedGrade, sortOrder, currentPage]);
+    }, [user?.userId, sortOrder]);
+
+    // 필터링 및 정렬된 피드백 목록 (프론트엔드에서 처리)
+    const filteredFeedbacks = useMemo(() => {
+        let filtered = [...allFeedbacks];
+
+        // 등급 필터링
+        if (selectedGrade !== 'ALL') {
+            filtered = filtered.filter(f => f.scoreGrade === selectedGrade);
+        }
+
+        // 정렬
+        const [sortField, sortDirection] = sortOrder.split(',');
+        filtered.sort((a, b) => {
+            let aValue = a[sortField];
+            let bValue = b[sortField];
+
+            // 날짜 처리
+            if (sortField === 'createdAt') {
+                aValue = new Date(aValue).getTime();
+                bValue = new Date(bValue).getTime();
+            }
+
+            if (sortDirection === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+
+        return filtered;
+    }, [allFeedbacks, selectedGrade, sortOrder]);
+
+    // 현재 페이지의 피드백 목록
+    const currentPageFeedbacks = useMemo(() => {
+        const startIndex = currentPage * pageSize;
+        const endIndex = startIndex + pageSize;
+        return filteredFeedbacks.slice(startIndex, endIndex);
+    }, [filteredFeedbacks, currentPage]);
+
+    // 전체 페이지 수
+    const totalPages = Math.ceil(filteredFeedbacks.length / pageSize);
 
     // 등급 필터 변경
     const handleGradeChange = (grade) => {
@@ -103,10 +129,41 @@ const FeedbackHistory = () => {
         }
     };
 
-    // 피드백 상세 보기
-    const handleViewDetail = (feedback) => {
-        setSelectedFeedback(feedback);
-        setModalOpen(true);
+    // 피드백 상세 보기 - 개별 API 호출
+    const handleViewDetail = async (feedbackSummary) => {
+        try {
+            setLoadingDetail(true);
+            setModalOpen(true);
+            setSelectedFeedback(null); // 로딩 상태 표시를 위해 null로 초기화
+
+            console.log('📋 피드백 상세 조회 - sessionId:', feedbackSummary.sessionId);
+
+            // 개별 피드백 API 호출 (전체 정보 포함)
+            const detailFeedback = await feedbackService.getFeedback(feedbackSummary.sessionId);
+
+            console.log('✅ 피드백 상세 조회 성공:', detailFeedback);
+            console.log('📊 상세 데이터 구조:', {
+                totalScore: detailFeedback?.totalScore,
+                scoreGrade: detailFeedback?.scoreGrade,
+                speechRateScore: detailFeedback?.speechRateScore,
+                fillerWordsScore: detailFeedback?.fillerWordsScore,
+                politenessScore: detailFeedback?.politenessScore,
+                clarityScore: detailFeedback?.clarityScore,
+                overallAnalysis: detailFeedback?.overallAnalysis,
+                sentenceAnalyses: detailFeedback?.sentenceAnalyses,
+                conversationImprovement: detailFeedback?.conversationImprovement,
+                improvementPoints: detailFeedback?.improvementPoints,
+            });
+
+            setSelectedFeedback(detailFeedback);
+
+        } catch (err) {
+            console.error('피드백 상세 조회 실패:', err);
+            toast.error('피드백 상세 정보를 불러오는데 실패했습니다.');
+            setModalOpen(false);
+        } finally {
+            setLoadingDetail(false);
+        }
     };
 
     // 모달 닫기
@@ -116,7 +173,7 @@ const FeedbackHistory = () => {
     };
 
     // 로딩 중
-    if (loading && feedbacks.length === 0) {
+    if (loading) {
         return (
             <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                 <p>피드백 목록을 불러오는 중...</p>
@@ -145,19 +202,25 @@ const FeedbackHistory = () => {
             {/* 에러 메시지 */}
             {error && (
                 <div className={styles['feedback-history__error']}>
-                    <ErrorMessage message={error} type="error"/>
+                    <ErrorMessage message={error} type="error" />
                 </div>
             )}
 
             {/* 피드백 목록 */}
             <div className={styles['feedback-history__list']}>
-                {feedbacks.length === 0 ? (
+                {currentPageFeedbacks.length === 0 ? (
                     <div className={styles['feedback-history__empty']}>
-                        <p>아직 피드백이 없습니다.</p>
-                        <p>대화 훈련을 시작해보세요!</p>
+                        {allFeedbacks.length === 0 ? (
+                            <>
+                                <p>아직 피드백이 없습니다.</p>
+                                <p>대화 훈련을 시작해보세요!</p>
+                            </>
+                        ) : (
+                            <p>해당 등급의 피드백이 없습니다.</p>
+                        )}
                     </div>
                 ) : (
-                    feedbacks.map(feedback => (
+                    currentPageFeedbacks.map(feedback => (
                         <FeedbackCard
                             key={feedback.sessionId}
                             feedback={feedback}
@@ -166,6 +229,13 @@ const FeedbackHistory = () => {
                     ))
                 )}
             </div>
+
+            {/* 피드백 개수 표시 */}
+            {filteredFeedbacks.length > 0 && (
+                <div className={styles['feedback-history__count']}>
+                    총 {filteredFeedbacks.length}개의 피드백
+                </div>
+            )}
 
             {/* 페이지네이션 */}
             {totalPages > 1 && (
@@ -178,12 +248,12 @@ const FeedbackHistory = () => {
                         이전
                     </button>
                     <span className={styles['feedback-history__page-info']}>
-            {currentPage + 1} / {totalPages}
-          </span>
+                        {currentPage + 1} / {totalPages}
+                    </span>
                     <button
                         className={styles['feedback-history__page-button']}
                         onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={!hasMore}
+                        disabled={currentPage >= totalPages - 1}
                     >
                         다음
                     </button>
@@ -191,12 +261,31 @@ const FeedbackHistory = () => {
             )}
 
             {/* 피드백 상세 모달 */}
-            <Modal
-                isOpen={modalOpen}
-                type="feedbackDetail"
-                data={selectedFeedback}
-                onClose={handleCloseModal}
-            />
+            {modalOpen && selectedFeedback && (
+                <FeedbackDetailModal
+                    isOpen={modalOpen}
+                    onClose={handleCloseModal}
+                    overallScore={selectedFeedback.totalScore}
+                    grade={selectedFeedback.scoreGrade}
+                    aiGeneratedFeedback={selectedFeedback.aiGeneratedFeedback}
+                    improvementPoints={selectedFeedback.improvementPoints}
+                    selectedAlternative={selectedFeedback.chosenAlternative}
+                    alternativeContent={
+                        selectedFeedback.chosenAlternative 
+                            ? selectedFeedback[`alternative${selectedFeedback.chosenAlternative}`]
+                            : null
+                    }
+                />
+            )}
+            
+            {/* 로딩 중 모달 */}
+            {modalOpen && loadingDetail && (
+                <div className={styles['feedback-history__loading-modal']}>
+                    <div className={styles['feedback-history__loading-content']}>
+                        <p>피드백을 불러오는 중...</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
