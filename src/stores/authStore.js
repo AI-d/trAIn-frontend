@@ -16,64 +16,87 @@ const initialState = {
   isInitialized: false,
 };
 
+// initializeAuth 중복 실행 방지
+let isInitializing = false;
+let initializePromise = null;
+
 export const useAuthStore = create(
   devtools(
     immer((set, get) => ({
       ...initialState,
 
       initializeAuth: async () => {
-        try {
-          // refresh 토큰(쿠키)으로 새 accessToken 발급 시도
-          const refreshResp = await apiClient.post('/users/refresh', null, {
-            validateStatus: (status) => status >= 200 && status < 600
-          });
-
-          // 401이면 로그아웃 상태 (정상)
-          if (refreshResp.status === 401) {
-            set({
-              status: 'unauthenticated',
-              user: null,
-              isInitialized: true,
-            });
-            return;
-          }
-
-          // 500 등 서버 에러도 로그아웃 상태로 처리
-          if (refreshResp.status !== 200) {
-            console.warn(`토큰 갱신 실패 (${refreshResp.status}):`, refreshResp.data);
-            set({
-              status: 'unauthenticated',
-              user: null,
-              isInitialized: true,
-            });
-            return;
-          }
-
-          const newAccessToken = refreshResp.data?.data?.accessToken;
-
-          if (!newAccessToken) {
-            throw new Error('No access token in refresh response');
-          }
-
-          set({ accessToken: newAccessToken });
-
-          const userProfile = await userService.getMyProfile();
-
-          set({
-            status: 'authenticated',
-            user: userProfile,
-            isInitialized: true,
-          });
-
-        } catch (error) {
-          console.error('인증 초기화 실패:', error);
-
-          set({
-            status: 'unauthenticated',
-            user: null,
-            isInitialized: true,
-          });
+        // 이미 초기화 완료되었으면 스킵
+        if (get().isInitialized) {
+          return;
         }
+
+        // 이미 초기화 중이면 기존 Promise 반환
+        if (isInitializing && initializePromise) {
+          return initializePromise;
+        }
+
+        isInitializing = true;
+
+        initializePromise = (async () => {
+          try {
+            // refresh 토큰(쿠키)으로 새 accessToken 발급 시도
+            const refreshResp = await apiClient.post('/users/refresh', null, {
+              validateStatus: (status) => status >= 200 && status < 600
+            });
+
+            // 401이면 로그아웃 상태 (정상)
+            if (refreshResp.status === 401) {
+              set({
+                status: 'unauthenticated',
+                user: null,
+                isInitialized: true,
+              });
+              return;
+            }
+
+            // 500 등 서버 에러도 로그아웃 상태로 처리
+            if (refreshResp.status !== 200) {
+              console.warn(`토큰 갱신 실패 (${refreshResp.status}):`, refreshResp.data);
+              set({
+                status: 'unauthenticated',
+                user: null,
+                isInitialized: true,
+              });
+              return;
+            }
+
+            const newAccessToken = refreshResp.data?.data?.accessToken;
+
+            if (!newAccessToken) {
+              throw new Error('No access token in refresh response');
+            }
+
+            set({ accessToken: newAccessToken });
+
+            const userProfile = await userService.getMyProfile();
+
+            set({
+              status: 'authenticated',
+              user: userProfile,
+              isInitialized: true,
+            });
+
+          } catch (error) {
+            console.error('인증 초기화 실패:', error);
+
+            set({
+              status: 'unauthenticated',
+              user: null,
+              isInitialized: true,
+            });
+          } finally {
+            isInitializing = false;
+            initializePromise = null;
+          }
+        })();
+
+        return initializePromise;
       },
 
       login: async (credentials) => {
