@@ -20,39 +20,39 @@ import FeedbackGenerationPage from "@/pages/Feedback/FeedbackGenerationPage.jsx"
 import { ProtectedRoute } from "@/routes/ProtectedRoute.jsx";
 
 export const router = createBrowserRouter([
-    {
-        path: "/",
-        element: <AppLayout />,
-        errorElement: <div>에러가 발생했습니다. 잠시 후 다시 시도해주세요.</div>,
+  {
+    path: "/",
+    element: <AppLayout />,
+    errorElement: <div>에러가 발생했습니다. 잠시 후 다시 시도해주세요.</div>,
+    children: [
+      // 루트는 웰컴으로
+      { index: true, element: <WelcomePage /> },
+
+      // Public Routes (인증 불필요)
+      { path: "login", element: <LoginPage /> },
+      { path: "signup", element: <SignupPage /> },
+      { path: "email-verification", element: <EmailVerificationPage /> },
+      { path: "email-verification-complete", element: <EmailVerificationCompletePage /> },
+      { path: "callback", element: <CallbackPage /> },
+      { path: "login/oauth2/code/:provider", element: <CallbackPage /> },
+      { path: "social-signup", element: <SocialSignupPage /> },
+
+      // Protected Routes (인증 필수)
+      {
+        element: <ProtectedRoute />,
         children: [
-            // 루트는 웰컴으로
-            { index: true, element: <WelcomePage /> },
-
-            // Public
-            { path: "login", element: <LoginPage /> },
-            { path: "signup", element: <SignupPage /> },
-            { path: "email-verification", element: <EmailVerificationPage /> },
-            { path: "email-verification-complete", element: <EmailVerificationCompletePage /> },
-            { path: "callback", element: <CallbackPage /> },
-            { path: "login/oauth2/code/:provider", element: <CallbackPage /> },
-            { path: "social-signup", element: <SocialSignupPage /> },
-
-            // Feature pages
-            { path: "scenarios", element: <ScenarioListPage /> },
-            { path: "dialogue", element: <DialoguePage /> },
-            { path: "create", element: <CreateScenarioPage /> },
-            { path: "feedback/:sessionId", element: <FeedbackGenerationPage /> },
-
-            // Protected
-            {
-                element: <ProtectedRoute />,
-                children: [{ path: "my-profile", element: <MyProfilePage /> }],
-            },
-
-            // Fallback
-            { path: "*", element: <WelcomePage /> },
+          { path: "scenarios", element: <ScenarioListPage /> },
+          { path: "dialogue", element: <DialoguePage /> },
+          { path: "create", element: <CreateScenarioPage /> },
+          { path: "feedback/:sessionId", element: <FeedbackGenerationPage /> },
+          { path: "my-profile", element: <MyProfilePage /> },
         ],
-    },
+      },
+
+      // Fallback
+      { path: "*", element: <WelcomePage /> },
+    ],
+  },
 ]);
 
 export default router;

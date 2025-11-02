@@ -376,8 +376,6 @@ export const useRealtimeSession = (scenarioId, userId) => {
                 language: "ko"
             });
 
-            console.log('📥 Ephemeral Key 응답:', ephemeralResponse.data);
-
             if (!ephemeralResponse.data.success) {
                 const errorMsg = ephemeralResponse.data.message || "Ephemeral Key 발급 실패";
                 console.error('❌ Ephemeral Key 발급 실패:', errorMsg);
