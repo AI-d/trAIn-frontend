@@ -552,3 +552,92 @@
     transform: translateY(0);
   }
 }
+
+/* 다크 모드 */
+@media (prefers-color-scheme: dark) {
+  .pageContainer {
+    background-color: #111827;
+  }
+
+  .header {
+    background: #1F2937;
+    border-bottom-color: #374151;
+  }
+
+  .scenarioTitle {
+    color: #F9FAFB;
+  }
+
+  .scenarioSubtitle {
+    color: #9CA3AF;
+  }
+
+  .closeButton {
+    color: #9CA3AF;
+
+    &:hover {
+      background-color: #374151;
+      color: #F9FAFB;
+    }
+  }
+
+  .loadingOverlay {
+    background: rgba(31, 41, 55, 0.95);
+  }
+
+  .spinner {
+    border-color: #374151;
+    border-top-color: #6B8EE8;
+  }
+
+  .loadingText {
+    color: #F9FAFB;
+  }
+
+  .loadingSubtext {
+    color: #9CA3AF;
+  }
+
+  .messageBubble {
+    .aiMessage & {
+      background: #1F2937;
+    }
+  }
+
+  .messageText {
+    .aiMessage & {
+      color: #F9FAFB;
+    }
+  }
+
+  .messageTime {
+    .aiMessage & {
+      color: #9CA3AF;
+    }
+  }
+
+  .controlPanel {
+    background: #1F2937;
+    border-top-color: #374151;
+  }
+
+  .statusHint {
+    color: #9CA3AF;
+  }
+
+  .blockedContainer {
+    background: linear-gradient(135deg, #111827 0%, #1F2937 100%);
+  }
+
+  .blockedContent {
+    background: #1F2937;
+  }
+
+  .blockedTitle {
+    color: #F9FAFB;
+  }
+
+  .blockedMessage {
+    color: #9CA3AF;
+  }
+}

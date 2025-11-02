@@ -59,8 +59,8 @@ $radius-md: 12px;
 /* 다크 모드 (옵션) */
 @media (prefers-color-scheme: dark) {
   .email-login-button {
-    background: #111827;
-    border-color: #374151;
-    color: #E5E7EB;
+    background: $primary-blue;
+    border-color: $primary-blue;
+    color: #fff;
   }
 }

@@ -144,7 +144,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 
-  > * {
+  >* {
     min-width: 0;
   }
 
@@ -194,5 +194,76 @@
 
   &:active:not(:disabled) {
     transform: scale(0.97);
+  }
+}
+
+// ===== 다크 모드 =====
+@media (prefers-color-scheme: dark) {
+  .pageContainer {
+    background-color: #111827;
+  }
+
+  .header {
+    background: #1F2937;
+    border-bottom-color: #374151;
+  }
+
+  .backButton {
+    color: #9CA3AF;
+
+    &:active {
+      background-color: #374151;
+      color: #F9FAFB;
+    }
+  }
+
+  .title {
+    color: #F9FAFB;
+  }
+
+  .formGroup {
+    label {
+      color: #F9FAFB;
+    }
+
+    input,
+    textarea,
+    select {
+      background: #1F2937;
+      border-color: #4B5563;
+      color: #F9FAFB;
+
+      &:focus {
+        border-color: #6B8EE8;
+        background: #1F2937;
+      }
+
+      &::placeholder {
+        color: #6B7280;
+      }
+
+      &:disabled {
+        background: #111827;
+        color: #6B7280;
+      }
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    }
+  }
+
+  .buttonContainer {
+    background: #1F2937;
+    border-top-color: #374151;
+  }
+
+  .cancelButton {
+    background: #374151;
+    color: #D1D5DB;
+
+    &:active:not(:disabled) {
+      background: #4B5563;
+    }
   }
 }

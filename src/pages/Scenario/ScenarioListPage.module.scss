@@ -23,8 +23,8 @@
   padding: 20px 16px;
   border-bottom: 1px solid var(--border-color, #e5e7eb);
   position: sticky;
-  top: 0;
-  z-index: 100;
+  top: 60px; // AppHeader 높이 (padding 12px * 2 + content ~36px)
+  z-index: 99;
 }
 
 .headerContent {
@@ -81,8 +81,8 @@
   background: var(--bg-primary, white);
   border-bottom: 1px solid var(--border-color, #e5e7eb);
   position: sticky;
-  top: 108px; // 헤더 높이만큼
-  z-index: 99;
+  top: 220px; // AppHeader(60px) + 시나리오 헤더 전체 높이(~160px)
+  z-index: 98;
 }
 
 .tab {
@@ -398,5 +398,115 @@
 
   svg {
     font-size: 18px;
+  }
+}
+
+// ===== 다크 모드 =====
+@media (prefers-color-scheme: dark) {
+  .pageContainer {
+    background-color: #111827;
+  }
+
+  .header {
+    background: #1F2937;
+    border-bottom-color: #374151;
+  }
+
+  .title {
+    color: #F9FAFB;
+  }
+
+  .subtitle {
+    color: #9CA3AF;
+  }
+
+  .tabs {
+    background: #1F2937;
+    border-bottom-color: #374151;
+  }
+
+  .tab {
+    color: #9CA3AF;
+
+    &:active {
+      background-color: #111827;
+    }
+
+    &.active {
+      color: #6B8EE8;
+      border-bottom-color: #6B8EE8;
+    }
+  }
+
+  .count {
+    background: rgba(107, 142, 232, 0.2);
+    color: #6B8EE8;
+
+    .active & {
+      background: #6B8EE8;
+      color: white;
+    }
+  }
+
+  .errorMessage {
+    background: rgba(239, 68, 68, 0.2);
+    color: #FCA5A5;
+  }
+
+  .loading p {
+    color: #9CA3AF;
+  }
+
+  .spinner {
+    border-color: #374151;
+    border-top-color: #6B8EE8;
+  }
+
+  .scenarioCard {
+    background: #1F2937;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+    &:active {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  .scenarioTitle {
+    color: #F9FAFB;
+  }
+
+  .scenarioDescription {
+    color: #9CA3AF;
+  }
+
+  .scenarioMeta {
+    border-top-color: #374151;
+  }
+
+  .metaItem {
+    color: #9CA3AF;
+  }
+
+  .category {
+    background: rgba(107, 142, 232, 0.2);
+    color: #6B8EE8;
+  }
+
+  .customBadge {
+    background: rgba(107, 142, 232, 0.2);
+    color: #6B8EE8;
+  }
+
+  .deleteButton {
+    color: #9CA3AF;
+
+    &:active {
+      background: rgba(239, 68, 68, 0.2);
+      color: #FCA5A5;
+    }
+  }
+
+  .emptyState p {
+    color: #9CA3AF;
   }
 }
