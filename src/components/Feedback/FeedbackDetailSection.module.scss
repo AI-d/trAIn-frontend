@@ -313,6 +313,7 @@ $light-blue: #EEF2FF;
 
 /* 다크 모드 */
 @media (prefers-color-scheme: dark) {
+
   .detail-section__title,
   .detail-section__subtitle {
     color: #E5E7EB;
@@ -330,14 +331,64 @@ $light-blue: #EEF2FF;
     border-color: #4B5563;
   }
 
-  .detail-section__text,
-  .detail-section__item p,
-  .detail-section__list-item,
-  .detail-section__sentence-original,
-  .detail-section__sentence-improved,
-  .detail-section__pattern--current,
-  .detail-section__pattern--improved,
+  .detail-section__text {
+    background: #1E3A5F;
+    color: #E5E7EB;
+  }
+
+  .detail-section__item {
+    strong {
+      color: #93C5FD;
+    }
+
+    p {
+      color: #E5E7EB;
+    }
+  }
+
+  .detail-section__list-item {
+    color: #E5E7EB;
+
+    strong {
+      color: #93C5FD;
+    }
+  }
+
+  .detail-section__sentence-original {
+    background: #78350F;
+    border-left-color: #F59E0B;
+    color: #FEF3C7;
+
+    strong {
+      color: #FCD34D;
+    }
+  }
+
+  .detail-section__sentence-improved {
+    background: #064E3B;
+    border-left-color: #10B981;
+    color: #D1FAE5;
+
+    strong {
+      color: #6EE7B7;
+    }
+  }
+
+  .detail-section__pattern--current {
+    background: #7F1D1D;
+    border-left-color: #EF4444;
+    color: #FEE2E2;
+  }
+
+  .detail-section__pattern--improved {
+    background: #064E3B;
+    border-left-color: #10B981;
+    color: #D1FAE5;
+  }
+
   .detail-section__dialogue {
+    background: #1E3A5F;
+    border-color: #6B8EE8;
     color: #E5E7EB;
   }
 
@@ -355,7 +406,7 @@ $light-blue: #EEF2FF;
     }
 
     ul li {
-      color: #E5E7EB;
+      color: #FEE2E2;
     }
   }
 
