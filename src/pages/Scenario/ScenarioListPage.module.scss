@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f8f9fb;
+  background-color: var(--bg-secondary, #f8f9fb);
   max-width: 430px;
   margin: 0 auto;
 }
@@ -19,9 +19,9 @@
 
 // ===== 헤더 =====
 .header {
-  background: white;
+  background: var(--bg-primary, white);
   padding: 20px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -34,13 +34,13 @@
 .title {
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary, #1a1a1a);
   margin: 0 0 6px 0;
 }
 
 .subtitle {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   line-height: 1.5;
   margin: 0;
 }
@@ -78,8 +78,8 @@
 // ===== 탭 =====
 .tabs {
   display: flex;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-primary, white);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
   position: sticky;
   top: 108px; // 헤더 높이만큼
   z-index: 99;
@@ -95,7 +95,7 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -103,7 +103,7 @@
   margin-bottom: -1px;
 
   &:active {
-    background-color: #f9fafb;
+    background-color: var(--bg-tertiary, #f9fafb);
   }
 
   &.active {
@@ -152,7 +152,7 @@
   gap: 16px;
 
   p {
-    color: #6b7280;
+    color: var(--text-secondary, #6b7280);
     font-size: 15px;
     margin: 0;
   }
@@ -186,15 +186,15 @@
   display: flex;
   flex-direction: column;
   padding: 16px;
-  background: white;
+  background: var(--bg-primary, white);
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--shadow-sm, rgba(0, 0, 0, 0.06));
   transition: all 0.3s ease;
   cursor: pointer;
 
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 4px var(--shadow-sm, rgba(0, 0, 0, 0.08));
   }
 }
 
@@ -217,14 +217,14 @@
 .scenarioTitle {
   font-size: 17px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary, #1a1a1a);
   line-height: 1.4;
   margin: 0;
   word-break: keep-all;
 }
 
 .scenarioDescription {
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 14px;
   line-height: 1.6;
   margin: 0 0 12px 0;
@@ -283,14 +283,14 @@
   gap: 12px;
   margin-bottom: 12px;
   padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color, #e5e7eb);
 }
 
 .metaItem {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   font-size: 13px;
 
   svg {
@@ -336,7 +336,7 @@
   padding: 6px;
   background: none;
   border: none;
-  color: #6b7280;
+  color: var(--text-secondary, #6b7280);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -364,7 +364,7 @@
   gap: 20px;
 
   p {
-    color: #6b7280;
+    color: var(--text-secondary, #6b7280);
     font-size: 15px;
     text-align: center;
     line-height: 1.6;
