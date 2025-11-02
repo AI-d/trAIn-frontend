@@ -285,7 +285,7 @@ npm test -- --coverage
 - [React 공식 문서](https://react.dev/)
 - [Vite 공식 문서](https://vitejs.dev/)
 - [Zustand 문서](https://zustand-demo.pmnd.rs/)
-- [프로젝트 문서](./docs/)
+- [프로젝트 문서](https://github.com/AI-d/Dialogym-docs/tree/dev/docs)
 
 ## 질문이나 도움이 필요하신가요?
 
