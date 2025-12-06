@@ -42,8 +42,6 @@ jobs:
       # 4단계: 프로덕션 빌드
       - name: Build project
         run: npm run build
-        env:
-          VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
 
       # 5단계: AWS 자격 증명 설정
       - name: Configure AWS credentials
